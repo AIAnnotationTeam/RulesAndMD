@@ -1,5 +1,9 @@
 # Android 中大型项目架构规范
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `core/common/src/main/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本模板面向使用 Kotlin、Jetpack Compose 和 Gradle 多模块的中大型 Android 项目。固定采用 Android 官方架构原则中的 UI 层 + Data 层 + 可复用 Domain 层，并按业务 Feature 拆分模块。
 
 固定技术栈：Jetpack Compose、Material 3、Navigation Compose、ViewModel、StateFlow、Kotlin Coroutines、Hilt、Retrofit、OkHttp、kotlinx.serialization、Room、DataStore、Paging 3、WorkManager、Coil。
@@ -74,6 +78,7 @@ Product/
 │   └── settings/                              # 设置业务
 ├── core/
 │   ├── common/                                # Result、Dispatcher、错误和通用扩展
+│   │   └── src/main/kotlin/com/company/core/common/config/AppEnvironment.kt # 项目环境配置与第三方常量
 │   ├── model/                                 # 跨 Feature 稳定模型和 ID 类型
 │   ├── designsystem/                          # Material 3 主题、颜色、字号、间距和基础组件
 │   ├── ui/                                    # 无业务语义的通用 Compose 组件

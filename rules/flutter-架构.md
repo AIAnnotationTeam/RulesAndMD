@@ -1,5 +1,9 @@
 # Flutter 中大型项目架构模板
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `lib/app/config/app_environment.dart` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本文是 Flutter 中大型项目的固定工程模板。所有业务代码按 Feature-first 组织，Feature 内部采用 Flutter 官方架构中的 UI 层、Domain 层和 Data 层；UI 层使用 MVVM，数据访问使用 Repository + Service。目录职责和依赖方向均已固定，新增代码必须按本文归位。
 
 ## 1. 固定技术栈
@@ -66,7 +70,8 @@ project_name/
 │   ├── app/                         # 应用级编排，不承载具体业务规则
 │   │   ├── app.dart                  # MaterialApp.router 根组件
 │   │   ├── bootstrap/                # 启动初始化、异常捕获和依赖装配
-│   │   ├── config/                   # 环境变量、构建 flavor 和应用常量
+│   │   ├── config/                   # 项目环境配置、构建 flavor 和应用常量
+│   │   │   └── app_environment.dart  # AppEnvironment：项目环境配置与第三方常量
 │   │   ├── navigation/               # GoRouter 实例、认证重定向和根路由
 │   │   ├── providers/                # 仅应用级 Provider，如环境和会话容器
 │   │   └── theme/                    # Material 3 ThemeData、颜色、字体和尺寸

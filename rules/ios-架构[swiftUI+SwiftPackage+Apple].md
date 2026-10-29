@@ -1,5 +1,9 @@
 # iOS 中大型项目架构规范
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `Packages/ProductModules/Sources/Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本模板面向新建的中大型 iOS 项目，固定采用 **SwiftUI + MVVM + 按业务域模块化 + Clean Architecture**。应用壳负责启动和跨业务编排，业务模块拥有展示、领域和数据实现，Swift Package Target 在编译期约束依赖方向。
 
 本规范是确定的项目执行标准。Apple 官方提供 SwiftUI、Observation、Swift Concurrency 和 Swift Package 等机制；下面的分层与目录是基于这些机制及社区实践制定的团队约定，不代表 Apple 规定的唯一架构。
@@ -92,6 +96,8 @@ Product/                                  # 项目根目录，包含 Xcode 工�
 │       │   │   ├── DesignSystem/         # Theme、设计 Token、Button、EmptyState 等基础 UI
 │       │   │   └── SharedModels/         # UserID、TenantID 等跨业务稳定数据契约
 │       │   └── Infrastructure/           # 无业务含义的技术基础设施模块
+│       │       ├── Configuration/        # 项目配置 Target
+│       │       │   └── AppEnvironment.swift # 项目环境配置与第三方常量
 │       │       ├── Networking/           # URLSession、HTTPClient、Endpoint 和技术错误
 │       │       ├── Persistence/          # 非业务存储协议、UserDefaults 和 SwiftData 基础适配
 │       │       ├── SecureStorage/        # Keychain 封装，负责 Token 和凭据的安全读写

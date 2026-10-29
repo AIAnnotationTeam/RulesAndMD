@@ -1,5 +1,9 @@
 # iOS SwiftUI + CocoaPods 四层架构项目规范
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本模板面向 SwiftUI + CocoaPods 的中大型 iOS 项目，固定采用传统四层架构。
 
 | 层级 | 名称 | 目录 | 核心职责 |
@@ -81,6 +85,8 @@ Product/                                      # 项目根目录
 │   ├── Components/                           # 跨业务标准 UI 组件
 │   └── BusinessArchitectureEntry.swift       # L2 公开能力入口
 ├── Infrastructure/                           # L3：底层技术能力
+│   ├── Configuration/                        # 项目配置
+│   │   └── AppEnvironment.swift              # 项目环境配置与第三方常量
 │   ├── Networking/                           # URLSession、HTTPClient、Endpoint、网络错误
 │   ├── Persistence/                          # SwiftData、UserDefaults 底层适配
 │   ├── SecureStorage/                        # Keychain 封装

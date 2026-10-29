@@ -1,5 +1,9 @@
 # Kotlin Multiplatform 中大型项目架构规范
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `core/common/src/commonMain/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本规范适用于 Android、iOS 与 Desktop 三端的 Kotlin Multiplatform 中大型项目。项目固定使用 Compose Multiplatform 共享 UI、Navigation Compose Multiplatform 管理导航、Koin 管理依赖注入、Ktor Client 访问网络、Room KMP 管理本地数据库、StateFlow 驱动界面状态，并使用 Gradle 多模块组织源码。Desktop 目标固定使用 JVM Desktop、Ktor CIO 与 Room Bundled SQLite Driver。
 
 采用**按业务域模块化 + Feature 内 MVVM 与 Clean Architecture**。业务模块是代码归属的第一边界；UI、用例、领域模型与数据实现是模块内部的第二边界。平台差异只在 Kotlin Source Set 边界出现，不向业务代码扩散。
@@ -54,6 +58,7 @@ project/
 │   └── settings/
 ├── core/                                        # 跨业务域基础模块
 │   ├── common/                                  # Result、Dispatcher、基础类型与工具
+│   │   └── src/commonMain/kotlin/com/company/core/common/config/AppEnvironment.kt # 三端共享环境配置与第三方常量
 │   ├── model/                                   # 跨 Feature 稳定共享的领域模型
 │   ├── designsystem/                            # Theme、Token、通用 Compose 组件
 │   ├── navigation/                              # 导航抽象与公共导航组件

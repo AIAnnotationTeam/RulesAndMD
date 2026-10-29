@@ -1,5 +1,9 @@
 # React Native 中大型项目架构规范
 
+## 第三方配置管理（强制）
+
+第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `src/core/config/app-environment.ts` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+
 本规范适用于 TypeScript 裸 React Native 中大型项目，覆盖 iOS、Android。导航固定使用 React Navigation，服务端状态固定使用 TanStack Query，客户端共享状态固定使用 Zustand，表单固定使用 React Hook Form 与 Zod，持久化固定使用 MMKV，敏感信息固定使用 Keychain/Keystore。目标是让业务代码内聚、跨端平台能力受控，并让每个新增文件都有明确归属。
 
 采用**按业务域模块化 + 模块内轻量 Clean Architecture**：全局不把所有页面、组件、服务按技术类型平铺；每个业务模块独立拥有展示、应用、领域和数据代码。架构服务于演进，不为文件夹数量 KPI 加班。
@@ -89,7 +93,8 @@ project/
 │   ├── core/                                 # 技术与平台基础设施
 │   │   ├── api/                              # Axios Client、请求拦截器、错误标准化
 │   │   ├── auth/                             # 认证 SDK 初始化、Token 刷新与安全存储协调
-│   │   ├── config/                           # 环境变量校验、构建配置读取
+│   │   ├── config/                           # 项目环境配置与常量统一入口
+│   │   │   └── app-environment.ts             # AppEnvironment：项目环境配置与第三方常量
 │   │   ├── native/                           # 原生能力的 TypeScript 包装
 │   │   ├── storage/                          # MMKV 与 Keychain/Keystore 适配器
 │   │   ├── observability/                    # 崩溃上报、日志、埋点客户端
