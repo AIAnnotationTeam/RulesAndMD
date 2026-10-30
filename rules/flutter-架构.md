@@ -25,6 +25,28 @@
 | 测试 | `flutter_test` + `mocktail` + `integration_test` + `golden_toolkit` | 单元、Widget、集成和视觉回归测试 |
 | 静态检查 | `very_good_analysis` | 统一 Dart lint、格式和复杂度约束 |
 
+## 1.1 默认第三方库基线
+
+| 能力 | 默认库 | 固定归属 |
+| --- | --- | --- |
+| 状态与依赖注入 | `flutter_riverpod`、`riverpod_annotation`、`riverpod_generator` | `lib/app/providers` 和各 Feature `presentation/providers` |
+| 路由 | `go_router` | `lib/app/router`，Feature 只提供公开路由入口 |
+| 网络与序列化 | `dio`、`json_annotation`、`json_serializable` | `lib/core/network`、Feature `data` |
+| 本地数据 | `drift`、`drift_flutter` | `lib/core/database`，表和 DAO 不进入 Domain |
+| 配置与安全存储 | `shared_preferences`、`flutter_secure_storage` | `lib/core/storage`，敏感凭证禁止写入普通偏好存储 |
+| 图片与日志 | `cached_network_image`、`talker` | `lib/core` 统一封装 |
+| 代码生成 | `build_runner` | 根目录构建脚本和 CI |
+| 测试与质量 | `flutter_test`、`mocktail`、`integration_test`、`golden_toolkit`、`very_good_analysis` | `test`、`integration_test` 和 CI |
+
+### 1.2 按功能启用的预置库
+
+| 功能 | 库 | 固定要求 |
+| --- | --- | --- |
+| 崩溃监控 | `sentry_flutter` | 仅正式环境启用，统一由 `core/observability` 脱敏上报 |
+| 推送通知 | `firebase_messaging`、`flutter_local_notifications` | 仅存在推送业务时启用，通过 Platform Adapter 接入 |
+| 音频播放 | `just_audio` | 仅存在音频业务时启用，播放器生命周期由 Feature Service 管理 |
+| 订阅支付 | `purchases_flutter` | 仅存在订阅业务时启用，权益校验走服务端 |
+
 ## 2. 总体架构层级
 
 | 层级 | 固定目录 | 职责 | 允许依赖 |

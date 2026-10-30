@@ -24,6 +24,25 @@
 | 模块管理 | 本地 Swift Package + 独立 Target；第三方依赖通过 SPM 引入 |
 | 测试 | Swift Testing 执行单元测试和集成测试；XCTest/XCUITest 执行 UI 自动化 |
 
+## 1.1 默认第三方库基线
+
+| 能力 | Swift Package 默认库 | 固定归属 |
+| --- | --- | --- |
+| 网络请求 | `Alamofire` | `Networking` Target，统一封装请求、重试和错误 |
+| 图片加载 | `Kingfisher` | `Infrastructure` 或对应 Feature Data 的 Adapter |
+| 动画 | `lottie-spm` | `DesignSystem` 或 Feature Presentation 的 UI Adapter |
+| 崩溃与性能 | `Sentry` | `Observability` Target，业务模块禁止直接调用 SDK |
+| 代码质量 | SwiftLint（构建工具） | CI 和 Xcode Build Phase，统一 Swift 检查 |
+
+### 1.2 按功能启用的预置库
+
+| 功能 | Swift Package | 固定要求 |
+| --- | --- | --- |
+| WebSocket | `Starscream` | 只有 `URLSessionWebSocketTask` 不满足协议要求时启用，封装在 `Networking` Target |
+| 订阅支付 | `RevenueCat` | 仅存在订阅业务时启用，购买和权益校验通过 Infrastructure Adapter |
+| 富文本/Markdown | `Down` | 仅对应内容功能启用，解析结果转换为项目内部模型 |
+| 错误上报 | `Sentry` | 统一由 `Observability` Target 初始化和脱敏 |
+
 ## 2. 架构层级与职责
 
 | 范围 | 位置 | 职责 |

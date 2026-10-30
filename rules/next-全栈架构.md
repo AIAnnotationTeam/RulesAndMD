@@ -210,3 +210,52 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 ## 8. 第三方环境变量管理（强制）
 
 第三方服务地址、应用 ID、API Key 等配置统一从项目根目录的 `.env.local` 等环境文件读取，经 `src/lib/env` 集中校验与导出，禁止写入代码。服务端密钥不得暴露给客户端，真实环境文件不得提交版本控制。
+
+## 9. 默认第三方库基线（强制纳入架构模板）
+
+以下库作为中大型 Next.js 全栈项目的默认技术基线，目录、依赖方向和环境配置必须按本节执行。业务功能库仍需在启用对应功能时安装，禁止为了凑齐清单把无关库加入运行依赖。
+
+### 9.1 默认基础依赖
+
+| 能力 | 默认第三方库 | 固定用途 | 归属位置 |
+| --- | --- | --- | --- |
+| Web 框架 | `next`、`react`、`react-dom` | App Router、页面渲染、服务端组件和客户端组件 | `apps/web` |
+| 样式与 CSS 构建 | `tailwindcss`、`postcss`、`@tailwindcss/postcss` | Tailwind 样式、全局主题、设计令牌和响应式布局 | `src/app/globals.css`、`src/styles` |
+| 表单与运行时校验 | `react-hook-form`、`zod` | 表单状态、API 参数、Server Action、环境变量和第三方响应校验 | Feature `schema.ts`、`src/lib/env` |
+| 服务端身份与数据库 | `@supabase/supabase-js`、`@supabase/ssr` | Cookie 会话、认证、PostgreSQL 查询和服务端会话衔接 | `src/lib/auth`、`src/lib/db` |
+| HTTP 客户端 | `axios` | 服务端第三方 API、Webhook 和需要拦截器的 HTTP 调用 | `src/lib/http`、服务端 Adapter |
+| 客户端数据缓存 | `swr` | 客户端列表、详情、用户状态读取和缓存失效 | Feature Hooks |
+| 实时连接 | `ws`、`@types/ws` | 独立 Node.js Gateway 的 WebSocket 长连接 | `apps/realtime-gateway` |
+| 图标与基础 UI | `lucide-react` | 统一图标组件，禁止页面直接混用图标来源 | `src/components/ui` |
+| 日期时间 | `date-fns`、`date-fns-tz` | 日期格式化、时区转换和预约时间处理 | `src/lib/utils`、业务 Service |
+
+### 9.2 默认开发、质量与测试依赖
+
+| 能力 | 默认第三方库 | 固定用途 |
+| --- | --- | --- |
+| TypeScript 类型 | `typescript`、`@types/node`、`@types/react`、`@types/react-dom` | 类型检查和 Node/React 类型声明 |
+| 代码检查 | `eslint`、`eslint-config-next`、`prettier` | ESLint 规则和统一代码格式 |
+| 单元与组件测试 | `vitest`、`@testing-library/react`、`@testing-library/jest-dom`、`jsdom` | Domain、Service、Hook、表单和组件主流程测试 |
+| 浏览器 E2E | `@playwright/test` | 登录、核心业务流程、权限和浏览器交互测试 |
+
+### 9.3 按功能启用的预置库
+
+| 功能 | 第三方库 | 启用后固定归属 |
+| --- | --- | --- |
+| 对象存储 | `@aws-sdk/client-s3`、`@aws-sdk/s3-request-presigner` | `src/lib/storage`；密钥只在服务端环境文件 |
+| 支付 | `stripe`、`alipay-sdk` | `features/billing/server`；Webhook 必须验签 |
+| 文件解析 | `unpdf`、`mammoth` | 对应 Feature 的 `server` 和 Adapter |
+| 浏览器录制 | `recordrtc`、`@types/recordrtc` | 对应媒体 Feature；必须先定义授权、存储和清理策略 |
+| 二维码 | `qrcode`、`@types/qrcode` | 对应邀请或支付 Feature；不放入全局组件 |
+| 音频编码 | `@breezystack/lamejs` | 音频 Feature；通过 Web Worker 执行编码 |
+| 数据库集成测试 | `@electric-sql/pglite` | `tests/integration`；只用于测试，不替代生产数据库 |
+
+### 9.4 依赖使用规则
+
+| 规则 | 固定要求 |
+| --- | --- |
+| 依赖清单 | 新项目创建时先建立上述默认基础依赖和质量依赖；按功能启用预置库时同步更新 `package.json` 和架构文档 |
+| 原生能力优先 | Next.js 原生 `fetch`、浏览器 Web API 或已有内部组件已经满足需求时，不重复引入第三方库 |
+| 适配层 | 支付、对象存储、翻译、RTC、文件解析等第三方 SDK 必须放在 Adapter 中，业务层只依赖接口 |
+| 环境变量 | 所有第三方服务地址、应用 ID、密钥和模型配置都从 `.env.local` 等环境文件读取，禁止硬编码 |
+| 测试门禁 | 每个新增业务功能至少覆盖一个主流程测试；第三方 SDK 使用 Mock 或沙箱，不把真实密钥写入测试 |

@@ -8,6 +8,30 @@
 
 采用**按业务域模块化 + 模块内轻量 Clean Architecture**：全局不把所有页面、组件、服务按技术类型平铺；每个业务模块独立拥有展示、应用、领域和数据代码。架构服务于演进，不为文件夹数量 KPI 加班。
 
+## 0.1 默认第三方库基线
+
+| 能力 | 默认库 | 固定归属 |
+| --- | --- | --- |
+| 导航与安全区 | `@react-navigation/native`、`@react-navigation/native-stack`、`react-native-screens`、`react-native-safe-area-context` | `src/app/navigation` 与 `src/app/providers` |
+| 服务端状态 | `@tanstack/react-query` | `src/core/query`，Query Key 和请求函数按 Feature 归属 |
+| 客户端状态 | `zustand` | Feature `application/state`；页面局部状态使用 React 状态 |
+| 网络与网络状态 | `axios`、`@react-native-community/netinfo` | `src/core/api` 和 `src/core/network` |
+| 表单校验 | `react-hook-form`、`@hookform/resolvers`、`zod` | Feature `presentation` 和 `data`，Domain 不依赖表单库 |
+| 存储与安全 | `react-native-mmkv`、`react-native-keychain`、`@op-engineering/op-sqlite` | `src/core/storage`；配置、凭证和关系数据分开存储 |
+| 动画与手势 | `react-native-reanimated`、`react-native-worklets`、`react-native-gesture-handler` | `src/shared/ui`，按版本成套配置 |
+| 列表与矢量图 | `@shopify/flash-list`、`react-native-svg` | Shared UI 或 Feature Presentation；长列表和 SVG 资源统一封装 |
+| 日志与错误 | `@sentry/react-native` | `src/core/observability`，统一脱敏和上报 |
+| 测试与边界检查 | Jest、React Native Testing Library、Detox、`eslint-plugin-boundaries` | `tests`、CI 和模块边界检查 |
+
+### 0.2 按功能启用的预置库
+
+| 功能 | 库 | 固定要求 |
+| --- | --- | --- |
+| 推送 | `@react-native-firebase/messaging` | 仅存在推送业务时启用，通过 `core/native` 适配 |
+| 相机与媒体 | `react-native-vision-camera` | 仅存在相机或扫码业务时启用，权限和生命周期由 Native Adapter 管理 |
+| 通知 | `notifee` | 仅存在本地通知或复杂通知交互时启用，Feature 不直接调用原生 API |
+| 订阅支付 | `react-native-purchases` | 仅存在订阅业务时启用，购买和权益校验通过 Data Adapter |
+
 ## 1. 全局架构层级
 
 | 层级 | 目录 | 职责 | 允许依赖 | 禁止依赖 |

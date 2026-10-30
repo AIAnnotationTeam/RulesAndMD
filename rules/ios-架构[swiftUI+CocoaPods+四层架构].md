@@ -31,6 +31,25 @@
 | 依赖注入 | L0 显式组装，业务模块使用构造函数注入 |
 | 测试 | Swift Testing 或 XCTest；XCUITest 执行 UI 自动化 |
 
+## 1.1 默认第三方库基线
+
+| 能力 | CocoaPods 默认库 | 固定归属 |
+| --- | --- | --- |
+| 网络请求 | `Alamofire` | L3 `Infrastructure/Networking`，统一封装请求、重试和错误 |
+| 图片加载 | `Kingfisher` | L3 Adapter，L1 只使用图片资源接口 |
+| 动画 | `lottie-ios` | L3 Adapter，业务层只传动画资源和播放状态 |
+| 崩溃与性能 | `Firebase/Crashlytics`、`Firebase/Performance` | L3 `Infrastructure/Observability`，禁止在业务层直接调用 Firebase |
+| 代码质量 | `SwiftLint` | CI 和 Xcode Build Phase，统一 Swift 代码检查 |
+
+### 1.2 按功能启用的预置库
+
+| 功能 | CocoaPods 库 | 固定要求 |
+| --- | --- | --- |
+| WebSocket | `Starscream` | 只有系统 `URLSessionWebSocketTask` 不满足协议要求时启用，统一放 L3 Adapter |
+| 订阅支付 | `RevenueCat` | 仅存在订阅业务时启用，购买和权益校验通过 L3 服务封装 |
+| 富文本/Markdown | `Down` | 仅对应内容功能启用，解析结果不得直接泄漏到 Domain |
+| 音频/蓝牙 | 项目确认的音频或蓝牙 Pod | 通过 L3 协议封装，权限、连接和资源释放不进入 L1 |
+
 ## 2. 四层职责
 
 | 层级 | 放置内容 | 允许依赖 | 禁止内容 |

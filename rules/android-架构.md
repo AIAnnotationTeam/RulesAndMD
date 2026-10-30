@@ -51,6 +51,30 @@ Feature 之间禁止直接依赖。跨 Feature 流程由 `:app` 编排；跨 Fea
 | 构建 | Gradle Version Catalog + Convention Plugin |
 | 测试 | JUnit 5、Turbine、Compose UI Test、MockWebServer、Macrobenchmark |
 
+## 2.1 默认第三方库基线
+
+| 能力 | 默认库 | 固定归属 |
+| --- | --- | --- |
+| UI 与导航 | Jetpack Compose、Material 3、Navigation Compose、Lifecycle Compose | `:core:designsystem`、`:core:ui` 和 `:app` |
+| 状态与异步 | ViewModel、Kotlin Coroutines、Flow、Turbine | ViewModel 和 Domain/UseCase；状态只通过 UiState 暴露 |
+| 依赖注入 | Hilt、Hilt Compiler、Hilt Work | `:app` 与 Feature Module，使用构造函数注入 |
+| 网络与序列化 | Retrofit、OkHttp、kotlinx.serialization、Logging Interceptor | `:core:network`；请求和 DTO 在 Feature Data |
+| 数据存储 | Room、Room KSP、DataStore、Android Keystore | `:core:database`、`:core:datastore` |
+| 分页与后台任务 | Paging 3、WorkManager | 对应 Feature Data |
+| 图片与动画 | Coil Compose、Lottie Compose | `:core:ui` 和 Design System |
+| 日志与诊断 | Timber、Sentry Android | `:core:analytics`；统一脱敏和采样 |
+| 工程质量 | Detekt、Ktlint、Dependency Analysis、Gradle Version Catalog | 根 Gradle 构建和 CI |
+| 测试 | JUnit 5、Coroutines Test、MockK、MockWebServer、Compose UI Test、Macrobenchmark | `test`、`androidTest` 和 `:benchmark` |
+
+### 2.2 按功能启用的预置库
+
+| 功能 | 库 | 固定要求 |
+| --- | --- | --- |
+| 音视频播放 | AndroidX Media3 | 仅存在媒体业务时启用，播放状态通过 Feature Repository 管理 |
+| 相机 | CameraX | 仅存在相机业务时启用，权限和生命周期封装在平台适配层 |
+| 推送 | Firebase Messaging | 仅对应 Google Play 渠道启用；多厂商推送通过独立 Adapter |
+| 应用内购买 | Google Play Billing | 仅存在订阅业务时启用，权益校验由服务端完成 |
+
 ## 3. 标准目录结构
 
 ```text

@@ -8,6 +8,28 @@
 
 采用**按业务域模块化 + Feature 内 MVVM 与 Clean Architecture**。业务模块是代码归属的第一边界；UI、用例、领域模型与数据实现是模块内部的第二边界。平台差异只在 Kotlin Source Set 边界出现，不向业务代码扩散。
 
+## 0.1 默认第三方库基线
+
+| 能力 | 默认库 | 固定归属 |
+| --- | --- | --- |
+| 并发与序列化 | `kotlinx-coroutines`、`kotlinx-serialization-json`、`kotlinx-datetime` | `core:common`，Domain 和 Use Case 使用跨平台 API |
+| 网络 | Ktor Client Core、Content Negotiation、WebSockets；Android 使用 OkHttp 引擎，iOS 使用 Darwin 引擎，Desktop 使用 CIO 引擎 | `core:network` |
+| 依赖注入 | Koin Core、Koin Compose | `core:di` 和各 Feature `di` |
+| UI 与导航 | Compose Multiplatform、Navigation Compose Multiplatform | `core:designsystem`、`composeApp` |
+| 本地数据 | Room KMP、Room Bundled SQLite Driver、DataStore | `core:database`、`core:datastore` |
+| 图片与日志 | Coil 3 Compose、Kermit | `core:designsystem`、`core:logging` |
+| 代码生成与依赖检查 | KSP、Detekt、Dependency Analysis Gradle Plugin | 根 Gradle 构建和 CI |
+| 测试 | Kotlin Test、Coroutines Test、Turbine、Compose UI Test | `commonTest`、平台测试 Source Set |
+
+### 0.2 按功能启用的预置库
+
+| 功能 | 库 | 固定要求 |
+| --- | --- | --- |
+| 动画 | Compottie | 只在存在 Lottie 动画时启用，封装在 Design System |
+| 崩溃与性能 | Sentry Kotlin Multiplatform | 统一放 `core:logging`，业务模块不直接初始化 SDK |
+| 推送 | Firebase Messaging 或平台推送 SDK | 仅对应平台和渠道启用，通过 Platform Source Set 封装 |
+| 支付 | RevenueCat 或平台支付 SDK | 仅存在订阅业务时启用，Domain 只依赖支付协议 |
+
 ## 1. 架构层级
 
 | 层级 | Gradle 模块 | 职责 | 允许依赖 | 禁止依赖 |
