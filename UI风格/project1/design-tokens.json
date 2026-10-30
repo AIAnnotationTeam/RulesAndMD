@@ -1,0 +1,53 @@
+{
+  "name": "Tongyan",
+  "version": "1.0",
+  "colors": {
+    "ink": "#182e32",
+    "muted": "#607275",
+    "brand": "#197b66",
+    "mint": "#b7efd4",
+    "paper": "#f5f7f5",
+    "line": "#e1e7e3",
+    "stage": "#101c23",
+    "tile": "#1c2d36",
+    "danger": "#bf4c4c",
+    "white": "#ffffff",
+    "muted-stage": "#9bafb2"
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48
+  ],
+  "radii": {
+    "input": 9,
+    "button": 10,
+    "tile": 13,
+    "card": 18
+  },
+  "typography": {
+    "web": "DM Sans, PingFang SC, Noto Sans SC, system-ui",
+    "figma": "Noto Sans SC / DM Sans",
+    "display": 34,
+    "heading": 24,
+    "body": 14,
+    "caption": {
+      "small": 14,
+      "standard": 17,
+      "large": 22
+    }
+  },
+  "viewport": {
+    "design": 1440,
+    "validated": [
+      1440,
+      1280,
+      1024
+    ],
+    "mobileSupported": false
+  }
+}

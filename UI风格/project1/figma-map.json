@@ -1,0 +1,21 @@
+{
+  "fileKey": "XZZbVyn3v7Ufk4K3NNSRLL",
+  "url": "https://www.figma.com/design/XZZbVyn3v7Ufk4K3NNSRLL",
+  "team": "superMember",
+  "frames": {
+    "workspace": "3:26",
+    "prepare": "3:27",
+    "meeting": "3:28",
+    "sharing": "3:29",
+    "waiting": "3:30",
+    "ended": "3:31",
+    "tenPersonMeeting": "19:71"
+  },
+  "components": {
+    "participantTile": "5:6",
+    "buttonLibraryKey": "cc8b558dc7d9684011b6b99ce8e6509399bc836b",
+    "compactParticipantTile": "21:127"
+  },
+  "foundationCollectionId": "VariableCollectionId:3:2",
+  "localPrototype": "index.html"
+}
