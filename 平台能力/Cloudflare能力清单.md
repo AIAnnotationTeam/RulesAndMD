@@ -84,17 +84,35 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | “这个对象过一会儿再检查” | DO Alarms |
 | “需要运行系统工具或自定义后台程序” | Containers 提供执行环境；调度与执行是两个职责 |
 
-## 6. 实时协作、状态协调与内部通信
+## 6. 实时音视频、协作状态与内部通信
 
-解决“多人共享同一份实时状态”和“自己的服务之间如何调用”的问题。
+解决“多人音视频如何转发、受限网络如何连接、媒体怎样接入 AI”，以及“共享状态和内部服务如何协调”的问题。
 
 | 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
 | --- | --- | --- | --- |
+| [Realtime SFU](https://developers.cloudflare.com/realtime/sfu/) | 在端点之间转发 WebRTC 音频、视频和 DataChannel，应用决定发布者与订阅者 | 多人会议、互动音视频、需要直接控制音轨路由的应用 | Realtime 独立计费，不纳入 Workers 起步费；应用自行实现信令、身份、房间权限和订阅控制，不自带模型翻译 |
+| [Realtime TURN](https://developers.cloudflare.com/realtime/turn/) | 当 NAT 或防火墙阻碍直接通信时，为 WebRTC 提供中继连接路径 | 受限网络中的会议连通性、已有 WebRTC 应用的 TURN 补充 | TURN 是连通性中继，不能代替 SFU 的多人音轨路由；与 Realtime SFU 配合的流量避免重复计费，单独使用按 TURN 规则计量 |
+| [WebSocket 媒体适配器](https://developers.cloudflare.com/realtime/sfu/features/media-transport-adapters/websocket-adapter/) | 将 SFU 单条音轨接到应用的 WebSocket 服务，导出音频或将生成音频发布回 SFU；也支持视频以 JPEG 帧导出 | 实时转写、AI 语音处理、百炼同传链路的适配验证 | 每个适配器为单轨单向，双向音频需分别创建；应用须提供公开 WSS 服务并适配协议，不能直接认定兼容百炼接口；流量纳入 Realtime 计费 |
 | [Durable Objects](https://developers.cloudflare.com/durable-objects/) | 为指定对象提供稳定身份、状态与协调执行入口，可结合 WebSocket | 多人房间、协作会话、游戏房间状态、资源生命周期协调 | 套餐额度；按对象设计分片与持久化，不能自动保证跨多个对象的业务事务 |
 | [Service Bindings / RPC](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/) | 一个 Worker 通过绑定调用另一个 Worker 的函数或请求入口，无需公开 URL | Web 通知后台调度、共用内部计算服务、拆分已有独立服务 | 运行能力；内部调用不额外增加 Worker 请求费，相关 CPU、DO 等仍计量 |
 | OpenNext 自引用绑定 | 适配器内部调用自身 Worker 所需的基础配置 | 按 OpenNext 部署要求提供 `WORKER_SELF_REFERENCE` | 框架实现细节，不是新业务优先选择的独立产品；不能据此判断已启用 ISR |
 
-实时聊天、协作与实时音视频是不同需求。DO 可参与消息和状态协调，但不因此自动具备完整音视频平台、媒体转发或模型实时语音能力。音视频项目应按媒体协议、处理方式和服务商能力单独选择实现。
+实时聊天、协作状态与音视频媒体传输应分别选型：DO 管状态，SFU 转发媒体，TURN 补充连通性，WebSocket 适配器连接媒体与处理服务。标准会议 SDK 与界面组件还可评估官方 [RealtimeKit](https://developers.cloudflare.com/realtime/realtimekit/)；需要直接控制音轨与信令时再评估 SFU。
+
+以下为接入外部语音模型的工程验证路径，不代表已经完成百炼兼容性或性能测试。
+
+| 接入环节 | 需要确认的边界 |
+| --- | --- |
+| 获取发言音轨 | 按发言者订阅独立音轨，避免将多人混音直接作为同一个翻译来源 |
+| SFU → 处理网关 | 适配器由 SFU 主动连接应用 WSS；音频使用 Protobuf 消息封装的 48 kHz、双声道、16-bit 小端 PCM，不是百炼原生事件格式 |
+| 处理网关 → 百炼 | 由自建网关解析封包、按所选模型转换采样率和声道、维护鉴权与模型事件；模型选择见[百炼能力清单](百炼平台能力清单.md) |
+| 译音返回 | 按适配器格式转换后通过另一适配器发布回 SFU，或由客户端独立播放；验证字幕归属、译音顺序、重连和全链路延迟 |
+| 视频适配 | 支持 JPEG 帧导出，不支持视频导入；不要将音频回灌能力扩大为任意视频双向适配 |
+| 费用与地域 | SFU、TURN 与适配器按 [Realtime 定价](https://developers.cloudflare.com/realtime/sfu/platform/pricing/)核算共享免费量和出站流量，网关计算与百炼调用另计；TURN 官方注明不含 Cloudflare 中国网络，需实测目标地区链路 |
+
+| 本组补充核查 | 说明 |
+| --- | --- |
+| 核查日期 | 2026-11-19，北京时间；依据上述官方能力和定价文档，未执行真实音视频或百炼联调 |
 
 ## 7. AI 推理、模型调用管理与语义搜索
 
@@ -177,6 +195,8 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | AI 摘要 / 写作工具 | Workers + Workers AI 或外部模型 | R2、异步任务、AI Gateway | 额度、输入输出校验、模型质量和成本控制 |
 | 知识库问答 | Workers + 原文存储 + 向量生成 + Vectorize + 生成模型 | 数据导入队列、流程编排、模型调用管理 | 文档权限、检索隔离、答案质量与引用设计 |
 | 多人协作 / 房间应用 | Workers + Durable Objects + 持久状态 | WebSocket、DO Alarms、业务数据库 | 身份、房间权限、重连、消息顺序和冲突处理 |
+| 多人实时音视频会议 | Realtime SFU + 信令后端 + 身份系统 | TURN、DO 房间状态、业务数据库 | 音轨发布订阅、会议权限、设备管理和弱网恢复 |
+| 多语言音视频会议 | Realtime SFU + WebSocket 适配器 + 翻译网关 + 百炼同传 | TURN、房间状态与配额监控 | 音频格式转换、独立音轨与语言频道、译音播放、延迟和成本验证 |
 | 视频课程 / 会员内容 | Workers + Stream + 数据库 + 身份系统 | Images、Web Analytics | 购买和观看权限、支付验签、课程管理 |
 | 内部管理工具 | Workers + 数据库 + Access | Logs、Cron | 后台业务角色、审计和资源授权 |
 | 支付型应用 | Workers + 业务数据库 + 支付渠道 | 异步通知处理、Logs、费用提醒 | 订单状态、签名验证、幂等入账；Cloudflare 不提供完整收款业务 |
@@ -193,6 +213,7 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | 是否属于敏感资产 | 先设计授权和隔离，再考虑缓存、签名、日志或模型调用 |
 | 套餐是否覆盖 | 检查产品资格、额度、资源上限、独立计费以及额外第三方账单 |
 | 是否适合目标用户地区 | 对真实用户到应用、数据库、对象存储和模型的链路测延迟，不只看节点分布 |
+| 实时音视频链路是否成立 | 分别验证 SFU 媒体路由、TURN 受限网络连接、适配器音频格式、模型协议、并发与译音回传，核对 [Realtime 限制](https://developers.cloudflare.com/realtime/sfu/platform/limits/) |
 | 是否经过运行时验证 | 检查框架版本、兼容标记、依赖与绑定，本地测试后做隔离平台验收 |
 
 
