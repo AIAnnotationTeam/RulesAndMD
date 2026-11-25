@@ -1,13 +1,14 @@
 # Cloudflare 技术选型能力清单
 
-**先看新项目要完成什么业务，再选择对应能力；按需组合，不必整套接入。** 本清单以 Workers Paid 为账号前提，整理两份参考文档涉及的能力，供新项目选型复用。
+**先看新项目要完成什么业务，再选择对应能力；按需组合，不必整套接入。** 本清单以 Workers Paid 为账号前提，整理 Cloudflare 官方能力及必要的外部集成，供新项目选型复用。
 **每月 $5 是 Workers Paid 账号级起步费，不是所有产品的固定总费用。** [Workers 官方计费说明](https://developers.cloudflare.com/workers/platform/pricing/)。
 
 | 项目 | 说明 |
 | --- | --- |
 | 适用范围 | 网站、Next.js 全栈应用、SaaS、AI 工具、内部系统等新项目 |
-| 范围边界 | 覆盖参考文档中的主要选型能力，不是 Cloudflare 全产品目录，也不是账号已开通资源列表 |
+| 范围边界 | 覆盖常用业务及补充核查的选型能力，不是 Cloudflare 全产品目录，也不是账号已开通资源列表；Better Auth、支付宝、Stripe 等明确标记为外部集成 |
 | 使用方法 | 先查功能分组，再查业务组合；价格和额度统一查套餐文档，正式采用前复核官方限制与兼容性 |
+| 补充核查日期 | 2026-11-25，北京时间；新增监控、统计、通知、邮件和支付相关能力，未执行真实部署、投递或交易测试 |
 
 ## 1. 前端部署与页面交付
 
@@ -133,16 +134,21 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 
 以上组合是通用选型示例，模型供应商按新项目需求选择。AI 输入、输出和调用日志应按用户授权、数据隔离及脱敏要求设计。
 
-## 8. 安全、人机验证与身份门禁
+## 8. 安全、人机验证与用户登录
 
-解决“拦攻击、减轻流量冲击、识别自动化访问、限制内部应用访问”的问题。
+解决“拦攻击、识别自动化访问、用户如何登录、谁能进入应用”的问题。登录证明身份，业务授权决定该身份能操作哪些资源，两者分别设计。
 
 | 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
 | --- | --- | --- | --- |
 | [WAF](https://developers.cloudflare.com/waf/) | 根据规则检查 Web / API 请求并过滤攻击特征，支持相应规则配置 | 恶意扫描、常见攻击请求、对指定敏感入口设置规则 | 网站套餐规则；权限与额度单独核对，不能代替资源归属校验 |
 | [DDoS 防护](https://developers.cloudflare.com/ddos-protection/) | 缓解大量恶意流量造成的服务冲击 | 公共网站、API 面对流量攻击 | 网站和产品防护规则；不等于免费处理无限正常业务，也不覆盖所有付费接口滥用 |
 | [Turnstile](https://developers.cloudflare.com/turnstile/) | 人机验证，增加自动化滥用成本，由服务端验证结果 | 注册刷号、表单垃圾提交、登录入口滥用 | 独立免费层；不能替代登录、业务授权或全部风控 |
-| [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/) | 进入内部应用前执行基于身份与策略的访问检查 | 员工运营后台、内部工具、测试管理入口 | Zero Trust 体系，按身份套餐核对；不等同于面向客户的产品账号系统 |
+| [Cloudflare Access](https://developers.cloudflare.com/workers/configuration/cloudflare-access/) | 提供登录入口、身份验证及访问策略，在请求到达应用前检查身份；受 Access 认证的 Worker 可读取用户身份 | 员工后台、合作伙伴门户、邀请制或其他受控访问应用 | Zero Trust 体系，按身份套餐和用户规模核对；不限于内部员工，但不自动提供产品用户资料、会员权益与资源归属管理 |
+| [Access 邮箱验证码登录](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/) | 向策略允许的邮箱发送一次性验证码，无需额外集成第三方身份提供商 | 邀请制工具、按邮箱或域名限制访问的门户 | Access 登录方式，不是任意业务邮件发送服务；允许哪些邮箱由策略决定，应用仍需维护业务用户与权限 |
+| [Access Passkeys](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/passkeys/) | 用户登记通行密钥后，通过设备、安全密钥或密码管理器登录 | 希望使用无密码登录的受保护应用 | 依赖 WebAuthn 与设备支持；密钥登记、登录成功不自动赋予访问权，仍须匹配 Access 策略 |
+| [Access 身份提供商集成](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/) | 接入组织或外部身份提供商，可同时配置多个登录来源 | 企业单点登录、合作伙伴身份接入 | 身份源、组信息和登录方式按对应集成检查；不同登录方式不保证携带相同身份属性 |
+| [Cloudflare 账号 OAuth](https://developers.cloudflare.com/fundamentals/oauth/integrate-with-cloudflare/) | 注册 OAuth 客户端，让用户通过已有 Cloudflare 账号授权应用 | Cloudflare 开发者工具、需要用户授权其 Cloudflare 资源的应用 | 面向已有 Cloudflare 账号；客户端可见范围和授权 Scope 按官方配置，不等同于为任意产品托管一套独立账号库 |
+| [Workers 上部署 Better Auth](https://better-auth.com/docs/guides/cloudflare) + [D1 支持](https://better-auth.com/blog/1-5) | 在 Workers 运行认证框架，用 D1 保存用户与会话等认证数据，构建产品自己的账号系统 | 面向公众的 SaaS、自定义注册登录流程、希望将认证运行在 Cloudflare 的项目 | 第三方开源框架部署方案，不是 Cloudflare 原生托管 Auth 产品；运行与存储按 Workers / D1 计费，应用负责框架维护、迁移、邮件发送及业务授权，按目标版本验证兼容性 |
 | [Zero Trust](https://developers.cloudflare.com/cloudflare-one/) | 面向内部资源访问的安全产品体系，Access 是其中一部分 | 企业员工与内部系统的访问管理 | 网站 / 身份套餐；不是每月起步费附赠的完整企业安全套件 |
 | [Workers Secrets / Variables](https://developers.cloudflare.com/workers/configuration/secrets/) | 为部署提供密钥和普通环境配置；运行时代码读取所需值 | 支付密钥、模型 API Key、测试与生产配置隔离、功能开关 | 运行能力；不是用户密码数据库，不把私密值放进浏览器公开变量 |
 
@@ -150,9 +156,18 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | --- | --- |
 | 请求是否匹配攻击规则 | WAF |
 | 提交者是否像真人 | Turnstile |
-| 是否允许员工进入内部应用 | Access |
-| 用户是谁、是否购买会员、是否拥有资源 | 产品登录与业务授权系统，例如 Supabase Auth + 应用权限 / RLS |
+| 是否允许员工、合作伙伴或受邀用户进入应用 | Access + 对应登录方式 + 访问策略 |
+| 是否仅需用验证码验证邮箱并控制入口 | Access 邮箱验证码登录；业务账号和资源授权另行判断 |
+| 是否用已有 Cloudflare 账号登录并授权 | Cloudflare 账号 OAuth；确认目标用户具备 Cloudflare 账号 |
+| 是否需要公众产品自己的注册登录与会话 | 优先评估 Workers + D1 + Better Auth；已有身份服务满足需求时先复用 |
+| 是否购买会员、是否拥有某条资源 | 应用内权益、角色与资源归属校验；Access 或认证框架登录成功不代表拥有业务权限 |
 | 支付通知是否可信 | 支付平台验签、事件去重、金额校验与事务入账，不由 WAF 代办 |
+
+原生 Access 登录、Cloudflare 账号 OAuth、第三方认证框架部署是三种不同路径。新项目按业务选择；不能把 Turnstile 当成登录，也不能把 D1 当成完整 Auth 服务。Workers + D1 + Better Auth 是能力组合建议，替换现有 Supabase Auth / Firebase Auth 前需核对登录方式、账号迁移、会话、移动端接入与权限模型。
+
+| 本组登录能力补充核查 | 说明 |
+| --- | --- |
+| 核查日期 | 2026-11-25，北京时间；依据各行官方文档，未进行真实登录部署或账号迁移测试 |
 
 ## 9. 图片与视频业务
 
@@ -177,12 +192,103 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
 | --- | --- | --- | --- |
 | [Logs / Observability](https://developers.cloudflare.com/workers/observability/logs/workers-logs/) | 收集、查询运行日志、错误与诊断线索 | 支付回调失败、请求报错、任务失败、容器运行排查 | 套餐相关额度，规则可能变化；不记录密钥、JWT、完整私密内容，不以日志代替账本 |
+| [Workers Issues](https://developers.cloudflare.com/workers/observability/issues/) | 检测 Workers 生产错误、聚合同类问题，结合 Source Map 定位源代码并触发自动通知 | Workers 服务端异常跟踪、重复错误排查 | 可优先评估替代服务端部分 Sentry 职责；需启用并上传构建生成的 Source Map，不覆盖移动端原生崩溃、ANR 和客户端完整诊断 |
+| [Workers Traces](https://developers.cloudflare.com/workers/observability/traces/) / [Cloudflare Traces](https://developers.cloudflare.com/observability/traces/) | 查看 Worker 与外部调用，以及请求穿过规则、缓存、路由和源站的路径与耗时 | 慢请求、模型调用延迟、缓存与源站性能诊断 | Worker 与域名追踪按对应入口启用；按采样、保留期和 Observability 计费核算，不等于移动端启动、卡顿与完整客户端 APM |
+| [OpenTelemetry 导出](https://developers.cloudflare.com/workers/observability/opentelemetry-export/) | 将 Workers 日志与链路发送到外部 OTLP 接收端 | 已有 Sentry、Grafana 等监控平台，需要关联服务端诊断 | 是导出集成，不代表 Cloudflare 接管接收端全部功能；日志和 Traces 的保存、导出及外部供应商费用分别核对 |
+| [Alerts / Monitors](https://developers.cloudflare.com/notifications/) | 按平台事件或定时查询条件触发告警，通过邮件、Webhook 等渠道通知 | 错误率、服务异常、资源与费用告警 | 查询监测、检测方式和通知渠道按权限与套餐核对；这是运维告警，不是手机系统推送服务 |
 | [Web Analytics](https://developers.cloudflare.com/web-analytics/) | 观察网站访问、来源和页面性能 | 官网流量、内容访问、页面体验评估 | 独立可用能力；不自动生成完整注册付费漏斗，业务事件需要另设计 |
+| [Workers Analytics Engine](https://developers.cloudflare.com/analytics/analytics-engine/) | 从 Workers 写入自定义事件，通过 SQL 查询高基数业务指标 | 注册、功能使用、按用户统计调用量、服务健康和用量分析 | 应用设计采集与报表；检查采样及查询语义，不用统计聚合代替精确支付账本或交易裁决 |
+| [Zaraz](https://developers.cloudflare.com/zaraz/) | 管理网站的统计工具、广告像素和第三方脚本，支持事件触发与同意管理 | 网站营销工具整合、转化事件分发 | 相关第三方工具与费用独立核对，不等于自带全部广告分析平台或完整移动安装归因 |
+| [Zaraz HTTP Events API](https://developers.cloudflare.com/zaraz/http-events-api/) | 从服务端、移动端等无法运行 Web API 的环境发送业务事件 | 注册成功、交易完成、移动端行为的事件转发 | 需配置端点并设计防滥用、授权与数据最小化；接收事件不等于替代 Meta SDK 的登录、安装归因等全部功能 |
 | [Wrangler](https://developers.cloudflare.com/workers/wrangler/) | 开发、部署、管理 Worker、绑定、密钥并查看日志 | 本地调试、版本发布、环境管理 | 开发工具；执行部署会变更资源，生产发布需对应验证 |
 | [workerd](https://github.com/cloudflare/workerd) | Workers 使用的运行时，可用于本地执行与兼容性验证 | 检查仅在 Workers 中出现的 API 或依赖问题 | 运行工具；本地替身测试不能证明生产外部服务和网络已通过验收 |
 | [费用提醒 / Spending limits](https://developers.cloudflare.com/workers/platform/spend-management/) | 提醒费用增长，并可对支持产品设置达到阈值后的调用限制 | 新项目上线、测试流量异常、成本保护 | Workers 与 DO 等分开核对；不是全产品精确总费用封顶，阻断会影响业务可用性 |
 
-## 11. 按新项目业务快速组合
+| 业务边界 | 选型判断 |
+| --- | --- |
+| Workers 错误、请求耗时与服务端告警 | 优先评估 Issues + Traces + Alerts，按需增加日志与 OTel 导出 |
+| iOS / Android 原生崩溃、ANR、符号解析 | 当前清单未核实到完整替代能力，保留 Sentry / Crashlytics 等必要客户端方案 |
+| 网站访问统计、自定义指标、广告事件分发 | 分别选择 Web Analytics、Analytics Engine、Zaraz，不把三者视为同一产品 |
+
+## 11. 用户通知、邮件发送与邮件接收
+
+解决“业务发生后怎样通知用户，以及应用如何发送和接收邮件”的问题。
+
+| 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
+| --- | --- | --- | --- |
+| [Web Push 官方实现方案](https://developers.cloudflare.com/agents/agent-class/communication-channels/webhooks/push-notifications/) | 由 Agent / Durable Object 保存订阅、调度，通过第三方 `web-push` 库和浏览器 Service Worker 投递通知 | 浏览器 / PWA 提醒、用户关闭标签页后的业务通知 | 平台组合与代码实现方案，不是独立托管推送产品；需权限、VAPID 和浏览器推送服务，受设备、网络与浏览器限制，不替代原生 APNs、FCM 或厂商通道 |
+| [Email Service / Email Sending](https://developers.cloudflare.com/email-service/) | 通过 Workers binding、REST API 或 SMTP 发送事务邮件 | 注册验证、登录验证码、密码重置、订单确认与业务提醒 | 当前 Sending 标注 Beta；须配置发送域名，任意收件人发送需要 Workers Paid，Free 限账号内已验证收件地址；额度和费用另核对，不用于营销群发 |
+| [Email Routing](https://developers.cloudflare.com/email-service/get-started/route-emails/) | 将域名收到的邮件转发到目标邮箱或交由 Worker 处理 | 客服入口、入站邮件处理、邮件驱动业务 | 是接收与路由能力，不等于通用邮箱客户端或完整邮件托管；与主动发送分开配置 |
+
+| 业务需求 | 优先组合与边界 |
+| --- | --- |
+| 自部署 Auth 需要发验证邮件 | Better Auth + Email Sending；验证码生成、校验、有效期、次数限制和用户状态由认证逻辑负责 |
+| 网站用户需要异步提醒 | Workers / Agent + 订阅存储 + Web Push；按浏览器环境验证送达 |
+| 原生 App 需要系统级远程推送 | Workers 承接发送接口与调度，继续接 APNs、FCM 或厂商推送；不使用 WebSocket 冒充离线推送 |
+| 运维人员需要异常告警 | 使用上一组 Alerts；不与产品用户通知混为一套通道 |
+
+发送到账号内已验证地址与发送到任意用户地址的资格不同。正式发送前按[发送指南](https://developers.cloudflare.com/email-service/get-started/send-emails/)验证域名与收件范围，并按[官方 FAQ](https://developers.cloudflare.com/email-service/reference/faq/)处理事务邮件用途和投递限制。
+
+## 12. 支付、订阅与专用付费访问
+
+解决“谁向谁付款、通过什么渠道收款、付款后如何交付权益”的问题。**国内普通业务支付优先使用支付宝**；支付宝与 Stripe 为外部支付集成，不是 Cloudflare 自有支付产品。
+
+### 12.1 普通业务支付：外部渠道 + Cloudflare 后端
+
+| 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
+| --- | --- | --- | --- |
+| [支付宝](https://b.alipay.com/home.htm)（国内支付优先） | 通过签约产品接入电脑网站、手机网站、App 等支付能力 | 国内网站订单、SaaS 套餐购买、服务费用支付 | 外部支付渠道，商户开通、产品资格与费率按支付宝核对；按实际终端选择产品，不能把所有扫码交互都当成当面付；Cloudflare 只承接订单、回调与权益业务 |
+| [Stripe Checkout](https://docs.stripe.com/payments/checkout)（海外支付评估） | 接入网站收银流程，支持一次性和订阅支付 | 符合商户开户及地区条件的海外业务 | 外部支付渠道，支付方式、币种和订阅费用独立核对；不因为 Worker 部署全球就认定商户或用户均可使用 |
+| Workers + 业务数据库 + 支付 Adapter | 服务端创建订单、调用支付平台、处理通知、查询状态与交付权益 | 支付宝和 Stripe 的统一业务接入 | 不改变实际支付渠道；密钥只在服务端，Node.js SDK 在 Workers 的兼容性需实测，必要时按官方 API 或容器适配 |
+
+| 支付场景 | 固定选型原则 |
+| --- | --- |
+| 国内 Web 业务收款 | 优先支付宝，电脑网站与手机网站分别选择已签约的适用产品 |
+| 海外 Web 业务收款 | 评估 Stripe，确认商户主体、地区与产品支持后采用 |
+| 定期收费与会员权益 | 区分一次付费开通会员、到期手动续费和自动扣费；不能把一次支付当成自动订阅，自动扣费须具备对应产品与用户授权 |
+| App 内数字内容购买 | 按目标商店、地区与业务类型核对内购规则；不以“国内优先支付宝”自动替代 StoreKit、Google Play Billing 或订阅管理服务 |
+| 支付状态确认 | 服务端验签、核对订单与金额、幂等更新，并用可信查询补偿；浏览器跳回成功页不能作为入账依据 |
+
+支付宝服务端接入见[官方 Node.js SDK](https://github.com/alipay/alipay-sdk-nodejs-all)，Stripe 事件处理见[官方 Webhook 文档](https://docs.stripe.com/webhooks)。订单、退款与权益状态保存在可信业务数据库，Queues 可用于可靠处理后续通知；未经验证的支付事件不能直接发放权益。
+
+### 12.2 Cloudflare 原生专用收费与协议集成
+
+| 能力 | 提供的功能说明 | 适用业务场景 | 选用边界与套餐关系 |
+| --- | --- | --- | --- |
+| [Monetization Gateway](https://developers.cloudflare.com/monetization-gateway/) | 对匹配请求附加 x402 支付要求，验证授权并经支付 Facilitator 结算 | API、MCP 工具、网站和数据集的付费访问 | 当前封闭测试，买卖双方须位于美国，另有账号与域名资格要求；不是国内支付宝收款或通用商店订阅替代，见[资格说明](https://developers.cloudflare.com/monetization-gateway/eligibility/) |
+| [Pay Per Crawl](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/what-is-pay-per-crawl/) | 对 AI 爬虫访问内容设置价格，Cloudflare 在此场景担任 Merchant of Record | 内容站向 AI 爬虫收取访问费用 | 当前封闭测试，按账号资格开通；用途是爬虫内容访问，不扩大为普通电商或 SaaS 订阅支付 |
+| [x402 协议集成](https://developers.cloudflare.com/agents/tools/payments/x402/) | 通过 HTTP 402 协商支付，由客户端签署授权，服务端验证与结算后返回资源 | Agent 程序化购买、按请求收费的工具 | 协议与集成路径，不等于 Cloudflare 经营全部支付渠道；钱包、网络和 Facilitator 另选，不作为普通国内支付默认方案 |
+| [MPP 协议集成](https://developers.cloudflare.com/agents/tools/payments/mpp/) | 用统一付款挑战与凭证完成 HTTP 或 MCP 付费交互，协议定义单次、按用量及订阅意图 | 自主开发的付费 API、MCP 工具、Agent 服务 | 第三方协议与 SDK 集成，可在 Workers 运行，不是 Cloudflare 原生托管商户或订阅系统；支付方式与 SDK 逐项核对，不因协议定义 subscription 就承诺已具备全部订阅生命周期功能 |
+| [AI Gateway Machine Payments](https://developers.cloudflare.com/ai-gateway/features/machine-payments/) | 通过 x402 和稳定币钱包支付指定模型的推理调用费用 | 应用或 Agent 向 Cloudflare 购买模型推理 | 这是支付模型成本，不是应用向终端客户收款；当前限美国主体、需信用卡和 API Token，仅适用官方列出的接口及模型，不推广到所有模型供应商 |
+
+### 12.3 按实际支付场景选择
+
+**先确认谁付款、谁收款、购买什么，再确定渠道与接入形态。** 以下为新项目的选型建议；同一项目可以既向用户收费，又向模型平台支付成本，这两笔资金流应分别设计。
+
+| 实际业务场景 | 谁付款 → 谁收款 | 优先选择 | 使用前提与避免误选 |
+| --- | --- | --- | --- |
+| 国内网站购买服务、套餐、报告或点数 | 国内用户 → 项目商户 | 支付宝 + Workers + 业务数据库 | 使用已签约的适用支付产品；点数余额、有效期和消费记录由业务维护，不由支付宝或 Cloudflare 自动提供 |
+| 国内会员到期后手动续费 | 国内用户 → 项目商户 | 支付宝一次性付款 + 应用会员有效期管理 | 每次续费由用户主动支付；这是会员业务，不等于自动扣款订阅 |
+| 国内周期自动扣费 | 已授权用户 → 项目商户 | 支付宝适用的签约与扣款产品，另行确认开通 | 先确认商户资格、业务适用性和用户授权；普通网站支付不能自动升级为代扣，未具备条件时采用手动续费 |
+| 海外网站一次性购买或自动订阅 | 海外用户 → 符合开户条件的商户 | Stripe Checkout；订阅按 Stripe 对应能力接入 | 核对商户主体、地区、币种和支付方式；订阅还需处理续费失败、取消、退款与权益同步 |
+| 原生 App 内购买数字内容或订阅 | App 用户 → 适用商店或支付渠道 | 按目标商店规则选择 StoreKit / Google Play Billing，按需使用 RevenueCat | 发行地区、业务类型和渠道规则优先；国内支付宝优先原则不自动绕过商店内购要求 |
+| 普通用户购买网站会员后访问内容 | 网站用户 → 项目商户 | 国内支付宝、海外评估 Stripe + 登录与权益校验 | 不因内容是付费页面就直接选 Pay Per Crawl；普通用户账号、退款和会员期限仍是应用业务 |
+| 已有 API / 数据集，希望由边缘网关按请求收费 | 支持付款协议的调用方 → 收款钱包 | 满足资格后评估 Monetization Gateway | 适合尽量保留原有业务接口的场景；当前封闭测试且买卖双方须在美国，接入还需后端验证付款上下文，见[接入指南](https://developers.cloudflare.com/monetization-gateway/get-started/) |
+| 自己开发 Worker API / MCP 工具，由 Agent 付款调用 | Agent 或程序客户端 → 服务提供方 | 有明确 x402 客户端需求时使用 x402；需要 MPP 交互时评估 MPP SDK | 自行部署协议处理与付费路由；核对钱包、资产、网络、支付渠道与客户端兼容，不能假设普通浏览器或支付宝能直接完成机器支付 |
+| 内容站向 AI 爬虫收费 | 参与付费机制的 AI 爬虫 → 内容发布者 | Pay Per Crawl | 当前封闭测试；不是所有爬虫都会支付。按[收益管理说明](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/use-pay-per-crawl-as-site-owner/manage-payouts/)创建专用 Stripe Connect 账户，不直接复用已有 Stripe 账户 |
+| 应用需要用钱包支付模型调用费 | 应用或 Agent → Cloudflare 模型服务 | 符合条件时评估 AI Gateway Machine Payments | 属于供应商成本支付；不能把它当作客户付款入口，也不能据此认定可用支付宝支付这些调用 |
+
+| 容易混淆的概念 | 正确判断 |
+| --- | --- |
+| “有会员”与“有自动订阅” | 一次付款也能购买定期会员；只有明确的签约、周期扣款与生命周期处理才属于自动续订方案 |
+| “按用量收费”与“使用机器支付协议” | 普通 SaaS 可以用支付宝购买点数，再由服务端计量扣减；不必须引入 x402 / MPP |
+| “Workers 支持付款接口”与“Cloudflare 实际收款” | Workers 承载支付宝或 Stripe 适配时，实际支付与结算渠道仍是外部平台 |
+| “协议可扩展支付方式”与“已经支持支付宝” | MPP 可扩展不代表当前选用 SDK 已提供支付宝接入；国内普通收款仍按支付宝官方产品实施 |
+| “美国资格限制”与“所有机器支付部署都受同一限制” | Monetization Gateway、AI Gateway Machine Payments 的限制按各产品适用；自部署协议方案另核对所用支付渠道与服务商，不照搬或忽略资格条件 |
+
+新项目应在架构文档中记录所选场景、付款方、收款方、实际渠道、计价方式及权益交付规则。支付宝、Stripe、网关收费和模型费用支付不能共用一个含义不明的“支付服务”配置。
+
+## 13. 按新项目业务快速组合
 
 以下是起步组合，数据库和身份系统可复用已有方案。只有业务需要时才增加后面的能力。
 
@@ -190,6 +296,8 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | --- | --- | --- | --- |
 | 静态官网 / 活动页 | Static Assets 或 Pages + 域名 / HTTPS | Web Analytics、Turnstile 表单验证 | 联系表单保存、通知发送和用户授权 |
 | 登录后的 SaaS | Workers + 所选框架路径 + 数据库 + 身份系统 | R2、Turnstile、Logs、公共内容缓存 | 账号、租户隔离、角色权限、业务数据规则 |
+| 自定义产品账号系统 | Workers + D1 + Better Auth | Turnstile、所需身份提供商、Email Sending | 认证表迁移、会话、注册登录界面、邮件验证与业务权限；验证框架、插件与邮件发送资格 |
+| 邀请制 / 受控访问门户 | Access + 邮箱验证码或已接入身份提供商 + 业务应用 | Passkeys、业务数据库、Logs | Access 允许策略、用户映射和应用内资源权限 |
 | 小型内容工具 | Workers + D1 | R2、公共内容缓存 | 用户授权与数据访问规则 |
 | 文件管理 / 文件转换 | Workers + R2 + 数据库 | Queues / Workflows；需要系统工具时加 Containers | 文件所有权、格式校验、上传限制、删除与任务状态 |
 | AI 摘要 / 写作工具 | Workers + Workers AI 或外部模型 | R2、异步任务、AI Gateway | 额度、输入输出校验、模型质量和成本控制 |
@@ -199,9 +307,17 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | 多语言音视频会议 | Realtime SFU + WebSocket 适配器 + 翻译网关 + 百炼同传 | TURN、房间状态与配额监控 | 音频格式转换、独立音轨与语言频道、译音播放、延迟和成本验证 |
 | 视频课程 / 会员内容 | Workers + Stream + 数据库 + 身份系统 | Images、Web Analytics | 购买和观看权限、支付验签、课程管理 |
 | 内部管理工具 | Workers + 数据库 + Access | Logs、Cron | 后台业务角色、审计和资源授权 |
-| 支付型应用 | Workers + 业务数据库 + 支付渠道 | 异步通知处理、Logs、费用提醒 | 订单状态、签名验证、幂等入账；Cloudflare 不提供完整收款业务 |
+| 国内支付型应用 | Workers + 业务数据库 + 支付宝 | Queues、Issues、Email Sending、费用提醒 | 商户与支付产品开通、验签、订单金额、幂等入账、退款和权益 |
+| 海外支付型应用 | Workers + 业务数据库 + Stripe | Queues、Traces、Email Sending | 商户地区与渠道资格、Webhook 验签、订阅状态和权益同步 |
+| 用户通知 / 邮件业务 | Workers + 订阅或业务数据 + 所需通知通道 | Agent / DO 调度、Web Push、Email Sending / Routing | 浏览器推送授权、设备通道、邮件域名、重试和失效订阅清理 |
+| 业务指标 / 广告事件 | Workers + Analytics Engine；需第三方工具分发时增加 Zaraz | HTTP Events API、报表和告警 | 事件模型、采样、同意管理、数据最小化和端点防滥用 |
+| 服务端错误与链路监控 | Issues + Logs + Traces | Alerts、OTel 导出 | 启用采集、Source Map、采样、保留期和告警策略；移动端诊断独立配置 |
+| AI 爬虫内容变现 | 满足资格后评估 Pay Per Crawl | 爬虫访问分析、收益配置 | 面向参与付款的爬虫，封闭测试及专用结算账户；不作为普通会员支付 |
+| 托管网关按请求收费 | 满足资格后评估 Monetization Gateway | 原站付款上下文验证、访问分析 | 当前买卖双方美国资格、封闭测试与钱包支付要求 |
+| 自部署机器付费 API / MCP | Workers + x402 或 MPP 协议适配 | 支付验证、结算、资源交付和用量记录 | 客户端与协议、资产和渠道匹配；不是默认的国内收银方案 |
+| 钱包支付模型成本 | 符合条件后评估 AI Gateway Machine Payments | 模型用量与费用监控 | 向模型服务付款，独立于向项目客户收款 |
 
-## 12. 实施前的选型检查
+## 14. 实施前的选型检查
 
 | 要回答的问题 | 判断方式 |
 | --- | --- |
@@ -211,6 +327,10 @@ OpenNext 和 vinext 放在本组，是为了按框架部署入口查找；它们
 | 是否依赖系统程序 | 依赖系统工具、原生二进制或完整进程环境时评估 Containers |
 | 是否允许旧数据 | 能接受短暂陈旧才评估共享缓存；支付、余额等依赖可信状态 |
 | 是否属于敏感资产 | 先设计授权和隔离，再考虑缓存、签名、日志或模型调用 |
+| 登录与授权是否分清 | 区分 Access 门禁、Cloudflare 账号 OAuth 与自部署 Auth；验证会话、退出、账号映射和资源归属，按身份套餐或框架部署方案核算费用 |
+| 通知到底发给谁 | 区分运维告警、浏览器 Web Push、原生设备推送和事务邮件，不能用一个“通知”产品承诺全部送达能力 |
+| 监控覆盖哪一端 | 区分 Workers 错误与链路、网页 RUM、移动原生崩溃；统计采样不能承担精确财务记账 |
+| 支付渠道是否适用 | 国内普通支付优先支付宝；验证终端、商户资格和实际产品，Cloudflare 专用收费另核对测试状态、地区与账号条件 |
 | 套餐是否覆盖 | 检查产品资格、额度、资源上限、独立计费以及额外第三方账单 |
 | 是否适合目标用户地区 | 对真实用户到应用、数据库、对象存储和模型的链路测延迟，不只看节点分布 |
 | 实时音视频链路是否成立 | 分别验证 SFU 媒体路由、TURN 受限网络连接、适配器音频格式、模型协议、并发与译音回传，核对 [Realtime 限制](https://developers.cloudflare.com/realtime/sfu/platform/limits/) |

@@ -1,8 +1,14 @@
 # Kotlin Multiplatform 中大型项目架构规范
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Ktor，在共享 Data 层接入项目 API；原生推送、支付与安全存储通过各 Platform Source Set 适配，逐端验证 Android、iOS 与 Desktop 支持情况。
+
 ## 第三方配置管理（强制）
 
-第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `core/common/src/commonMain/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+可公开的第三方服务地址、应用 ID、客户端公开标识等项目配置统一定义在 `core/common/src/commonMain/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。 Cloudflare 管理令牌、百炼长期 API Key、支付私钥和数据库管理凭据仅保存在可信服务端；用户会话与受限短期凭证按平台安全存储规范管理，禁止放进 AppEnvironment 或打包到客户端。
 
 本规范适用于 Android、iOS 与 Desktop 三端的 Kotlin Multiplatform 中大型项目。项目固定使用 Compose Multiplatform 共享 UI、Navigation Compose Multiplatform 管理导航、Koin 管理依赖注入、Ktor Client 访问网络、Room KMP 管理本地数据库、StateFlow 驱动界面状态，并使用 Gradle 多模块组织源码。Desktop 目标固定使用 JVM Desktop、Ktor CIO 与 Room Bundled SQLite Driver。
 

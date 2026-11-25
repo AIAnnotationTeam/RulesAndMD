@@ -1,5 +1,13 @@
 # Android 项目的常用第三方库
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Retrofit / OkHttp，经 Feature Data 与 Repository 调用项目 API；推送按发行渠道使用 FCM 或厂商适配，原生诊断保留 Sentry Android。
+
+服务端云 SDK 不因本清单而加入客户端依赖。沿用下文网络库，经 Repository / Data Adapter 调用所选平台的项目 API；仅在直传、实时媒体等已验证场景使用短期受限凭证。模型、支付和云管理长期密钥留在服务端。
+
 本清单面向 Kotlin、Jetpack Compose、Gradle 多模块的中大型 Android 项目，与 [Android 架构规范](android-架构.md) 保持一致。固定使用 Hilt、Retrofit、OkHttp、kotlinx.serialization、Room、DataStore、Paging、WorkManager 和 Coil，不同时引入职责重叠的基础框架。
 
 AndroidX 和 Kotlin 官方生态组件承担工程基础能力，社区库补齐网络、图片、动画、监控和工程效率。下文明确维护来源，不把官方组件误称为独立社区项目。业务扩展仅在功能存在时安装，清单不是全量安装套餐。

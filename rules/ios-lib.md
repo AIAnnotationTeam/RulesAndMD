@@ -1,6 +1,10 @@
 
 
- iOS 项目的常用第三方库
+# iOS 项目的常用第三方库
+
+## 外部平台能力选型（强制）
+
+先按[统一选型规则](平台能力选择原则.md#外部平台能力选型强制)选择平台，依据 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼能力清单](../平台能力/百炼平台能力清单.md) 确定适用能力，再选客户端库。系统、本地与界面库保持原职责，云服务 SDK 按项目启用。
 
 
 # 网络通信工具
@@ -67,29 +71,35 @@
 
 # 身份认证与云端数据工具
 
-| 第三方库 | 简要介绍 |
+| 业务能力 | 优先平台路线 | iOS 接入边界 |
+| --- | --- | --- |
+| 产品认证 | Workers + D1 + Better Auth，按需 Email Sending | 通过已确定的认证协议或适配器接入，验证移动端回调、会话和退出；用户凭据使用 Keychain，不把浏览器 Cookie 流程直接照搬到原生端 |
+| 云端业务数据 | Workers API + D1；实时状态按需 DO | 使用 URLSession / 已有网络封装，SwiftData 或 SQLite 继续承担本地离线数据；云端长期凭据不进入 App |
+| 文件 | R2 + 后端授权与短期签名 | 上传、下载和播放经受控接口，不把 R2 管理凭据打包到客户端 |
+| 服务端业务 | Workers；需系统依赖时使用 Containers | 客户端调用项目 API，不假设兼容 Firebase Callable Functions 的协议 |
+
+| 按选型结果启用的 SDK | 使用边界 |
 | --- | --- |
-| `Firebase/Core` | Firebase 基础集成入口，用于初始化 Firebase 应用及相关基础能力。 |
-| `Firebase/Auth` | 用户认证 SDK，提供登录、账号管理、身份令牌及认证状态管理。 |
-| `Firebase/Firestore` | 云端文档数据库 SDK，提供业务数据读写、查询、实时监听和事务操作。 |
-| `Firebase/Storage` | 云端对象存储 SDK，用于上传、下载和管理录音、图片等文件。 |
-| `Firebase/Functions` | Cloud Functions 客户端 SDK，用于调用云端 Callable Functions，执行服务端业务逻辑。 |
+| `Firebase/Core` | 仅实际采用 Firebase 模块时初始化，例如下文 Crashlytics；不因该依赖自动启用 Firebase 全套云服务 |
+| `Firebase/Auth`、`Firebase/Firestore` | 仅明确保留现有服务或清单路线无法覆盖所需认证、实时监听与离线同步时启用，记录依据 |
+| `Firebase/Storage`、`Firebase/Functions` | 新选型优先 R2 和 Workers；保留旧工程时按业务边界维护，不在新项目无条件安装 |
 
 
 # 监控与性能工具
 
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `Firebase/Crashlytics` | 崩溃监控工具，收集崩溃、非致命错误及诊断信息，帮助定位线上问题。 |
-| `Firebase/Performance` | 性能监控工具，采集应用启动、网络请求及自定义业务流程的耗时指标。 |
+| `Firebase/Crashlytics` | CocoaPods 模板的崩溃诊断基线；保留原生崩溃与非致命错误诊断，不默认叠加 Sentry。Cloudflare Issues 不替代该客户端职责。 |
+| `Sentry` | SPM 模板的客户端诊断基线；由 `Observability` Target 统一初始化、脱敏和采样，不默认叠加 Crashlytics。 |
+| `Firebase/Performance` | 按客户端性能需求启用，采集启动、网络及业务耗时；服务端请求链路优先使用 Cloudflare Traces，避免重复采集。 |
 
 
 # 支付与广告分析工具
 
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `RevenueCat` | 应用内购买与订阅管理 SDK，提供商品查询、购买、恢复购买和用户权益管理。 |
-| `FBSDKCoreKit` | Meta/Facebook 基础 SDK，提供应用事件上报、广告效果衡量及相关平台集成能力。 |
+| `RevenueCat` | 商店购买、恢复和订阅管理需要时保留；普通 Web 收款按清单国内支付宝、海外 Stripe 选型，不将二者等同于商店内购。 |
+| `FBSDKCoreKit` | 只为实际需要的 Meta 专属能力引入；仅业务事件采集与转发时优先评估 Analytics Engine / Zaraz HTTP Events API，完整归因不能直接替换。 |
 
 
 # Swift 扩展工具
@@ -111,9 +121,11 @@
 
 # AI 实时语音工具
 
-| 第三方库 | 简要介绍 |
+| 能力 / 工具 | 接入要求 |
 | --- | --- |
-| `swift-realtime-openai`（产品名 `RealtimeAPI`） | OpenAI Realtime API 的 Swift 客户端封装，提供实时会话、音频交互和事件处理能力。项目通过 `Conversation` 等接口实现 AI 角色扮演语音对话。 |
+| 百炼实时对话 / 同传 | 优先按百炼清单分别确定对话与翻译模型，由服务端持有长期密钥；iOS 使用项目语音 Adapter、受控网关或经验证的短期凭证接入 |
+| URLSession WebSocket / Starscream | 承担协议传输，采集与播放使用平台音频能力；Adapter 处理供应商事件、音频格式、打断、重连和错误映射，验证后确定实现 |
+| `swift-realtime-openai`（产品名 `RealtimeAPI`） | 仅已确认采用 OpenAI Realtime 或维护旧接入时使用，不作为新项目默认依赖；不能只改地址就视为百炼兼容 |
 
 
 

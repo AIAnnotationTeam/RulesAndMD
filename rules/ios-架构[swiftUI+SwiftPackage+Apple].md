@@ -1,8 +1,14 @@
 # iOS 中大型项目架构规范
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Networking Target 接入项目 API；SPM 模板以 Sentry 为客户端诊断基线，推送与商店购买通过 Infrastructure Adapter 封装。
+
 ## 第三方配置管理（强制）
 
-第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `Packages/ProductModules/Sources/Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+可公开的第三方服务地址、应用 ID、客户端公开标识等项目配置统一定义在 `Packages/ProductModules/Sources/Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。 Cloudflare 管理令牌、百炼长期 API Key、支付私钥和数据库管理凭据仅保存在可信服务端；用户会话与受限短期凭证按平台安全存储规范管理，禁止放进 AppEnvironment 或打包到客户端。
 
 本模板面向新建的中大型 iOS 项目，固定采用 **SwiftUI + MVVM + 按业务域模块化 + Clean Architecture**。应用壳负责启动和跨业务编排，业务模块拥有展示、领域和数据实现，Swift Package Target 在编译期约束依赖方向。
 
@@ -31,7 +37,7 @@
 | 网络请求 | `Alamofire` | `Networking` Target，统一封装请求、重试和错误 |
 | 图片加载 | `Kingfisher` | `Infrastructure` 或对应 Feature Data 的 Adapter |
 | 动画 | `lottie-spm` | `DesignSystem` 或 Feature Presentation 的 UI Adapter |
-| 崩溃与性能 | `Sentry` | `Observability` Target，业务模块禁止直接调用 SDK |
+| 崩溃与性能 | `Sentry` | `Observability` Target 统一初始化、脱敏和采样，业务模块禁止直接调用 SDK |
 | 代码质量 | SwiftLint（构建工具） | CI 和 Xcode Build Phase，统一 Swift 检查 |
 
 ### 1.2 按功能启用的预置库
@@ -41,7 +47,6 @@
 | WebSocket | `Starscream` | 只有 `URLSessionWebSocketTask` 不满足协议要求时启用，封装在 `Networking` Target |
 | 订阅支付 | `RevenueCat` | 仅存在订阅业务时启用，购买和权益校验通过 Infrastructure Adapter |
 | 富文本/Markdown | `Down` | 仅对应内容功能启用，解析结果转换为项目内部模型 |
-| 错误上报 | `Sentry` | 统一由 `Observability` Target 初始化和脱敏 |
 
 ## 2. 架构层级与职责
 

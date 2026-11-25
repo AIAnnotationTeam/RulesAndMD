@@ -1,5 +1,21 @@
 # Next.js 中大型全栈项目目录规范
 
+## 外部平台能力选型（强制）
+
+先执行[统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，读取 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 与 [百炼能力清单](../平台能力/百炼平台能力清单.md)。框架和目录规范不预先绑定云服务供应商。
+
+| 能力 | 新项目优先路线 | 实施要求 |
+| --- | --- | --- |
+| 部署与后端 | Workers + 与当前 Next.js 版本兼容的框架适配路径 | 先验证运行时和依赖；需要系统二进制与完整进程时采用 Containers，不把 Node.js 兼容理解为完整 Node 运行环境 |
+| 认证与数据 | 产品账号评估 Better Auth + D1，受控入口评估 Access；数据库独立验证 D1 | 认证、数据库与业务授权分开确定；保留 PostgreSQL / Supabase 的项目记录特性与迁移依据，不默认安装全套 Supabase SDK |
+| 文件与任务 | R2；异步处理按语义选择 Queues、Workflows、Cron | R2 binding 与 S3 API 按执行位置确定；不为使用所有产品同时引入多套队列 |
+| 实时 | 房间状态优先 DO，音视频优先 Realtime SFU / TURN / 媒体适配器 | 模型长连接网关单独验证，运行时确定后才选传输库；独立 Node Gateway 不是所有项目的默认单元 |
+| AI | 百炼清单按能力确定模型，Cloudflare Workers AI 按适用性评估 | 对话、同传、ASR、TTS、图像及视频模型分别配置；业务不直接依赖供应商事件格式 |
+| 监控与通知 | Issues、Logs、Traces、Alerts；事务邮件使用 Email Sending，Web 通知评估 Web Push | 校验套餐、域名、投递与平台边界，按需使用 Analytics Engine / Zaraz |
+| 支付 | 国内普通 Web 支付优先支付宝，海外评估 Stripe | 按清单支付场景表固定选型；x402 / MPP、爬虫收费、模型成本支付独立判断，不作为普通收银默认依赖 |
+
+已确认项目方案优先于通用模板；上述优先路线需完成适用性验证后形成唯一实施方案。现有工程不因模板更新自动迁移数据库、认证或网关。
+
 本规范适用于使用 TypeScript、App Router 的中大型 Next.js 全栈项目。项目可同时包含用户前台、管理后台、开放 API、Webhook 和定时任务。
 
 目录以**路由边界**和**业务域**为主，以**运行环境**和**复用范围**为辅助边界：业务代码按功能内聚，框架入口保持轻薄，服务端数据访问集中且安全。
@@ -12,7 +28,7 @@
 | 再判断复用范围 | 仅在两个及以上独立业务域稳定复用，才进入共享目录。复用一次不等于通用。 |
 | 路由不承载业务 | `app` 只处理路由、布局、页面组装、请求与响应适配；复杂规则、数据库读写不得放入其中。 |
 | 服务端边界明确 | 数据库、密钥、鉴权、授权和第三方服务端 SDK 只能在服务端模块中使用。 |
-| 第三方配置统一管理 | 第三方服务的环境配置必须统一从项目根目录的环境文件读取，经 `src/lib/env` 校验并导出；禁止在代码中硬编码配置值。 |
+| 第三方配置统一管理 | 第三方标量配置本地从项目环境文件读取，生产由部署平台注入，经 `src/lib/env` 校验导出；资源绑定通过运行时适配器获取，禁止硬编码真实配置值。 |
 | 先就近后上提 | 代码默认放在最小有效作用域；确认跨域稳定复用后才上提，避免过早抽象。 |
 
 ## 2. 标准目录模板
@@ -47,7 +63,7 @@ project/
 │   │   │           └── page.tsx         # /admin/users
 │   │   ├── api/                         # 对外 HTTP API 与第三方回调
 │   │   │   ├── v1/projects/route.ts     # /api/v1/projects
-│   │   │   └── webhooks/stripe/route.ts # /api/webhooks/stripe
+│   │   │   └── webhooks/                  # 仅创建已启用渠道的 alipay、stripe 等回调
 │   │   ├── layout.tsx                   # 根布局
 │   │   ├── error.tsx
 │   │   ├── global-error.tsx
@@ -93,14 +109,16 @@ project/
 │   ├── integration/                     # Route Handler、DAL 与外部服务集成
 │   └── unit/                            # 纯函数和业务规则
 ├── scripts/                             # 维护、导入、迁移脚本
+├── migrations/                          # 使用 D1 时保存迁移；其他数据库按已确定工具归档
 ├── docs/                                # 架构与业务文档
-├── .env.example                         # 环境变量名称、用途与占位值，提交版本控制
+├── .env.example                         # 沿用通用变量模板命名与平台分组，仅保留占位值
 ├── .env.local                           # 本地真实配置，禁止提交版本控制
 ├── .env.development.local               # 开发环境覆盖配置，禁止提交版本控制
 ├── .env.production.local                # 生产环境覆盖配置，由部署流程生成，禁止提交版本控制
 ├── .gitignore                           # 忽略真实环境文件，仅保留 .env.example
 ├── next.config.ts
 ├── tsconfig.json
+├── wrangler.jsonc                       # 采用 Workers 时的部署、资源绑定与兼容配置
 └── package.json
 ```
 
@@ -209,7 +227,11 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 
 ## 8. 第三方环境变量管理（强制）
 
-第三方服务地址、应用 ID、API Key 等配置统一从项目根目录的 `.env.local` 等环境文件读取，经 `src/lib/env` 集中校验与导出，禁止写入代码。服务端密钥不得暴露给客户端，真实环境文件不得提交版本控制。
+新项目以 [Next 通用环境变量模板](../Next全局变量/env.example) 为命名契约：使用相同平台能力时沿用已有变量名，按平台类型分组；模板中未覆盖的配置按其命名规则补充，同步维护模板与项目 `.env.example`。仅启用实际使用的配置组，不填写或校验未使用的平台。
+
+本地标量配置从应用根目录的 `.env.local` 等环境文件读取，线上配置与 Secrets 由部署平台注入，经 `src/lib/env` 集中校验与导出。项目 `.env.example` 仅保留名称、用途和占位值；真实配置禁止硬编码或提交版本控制，服务端密钥不得暴露给客户端。
+
+采用 Workers 时，线上标量配置与 Secrets 由部署平台注入，D1、R2、KV、DO 等原生绑定经框架适配器提供的运行时上下文获取，不序列化进 `.env.local`。Wrangler 本地调试按其加载机制使用 `.dev.vars` 等本地文件，禁止提交真实值；`src/lib/env` 统一导出校验后的标量配置，独立运行时适配器提供类型化资源绑定。只有所选业务启用时才校验对应配置。
 
 ## 9. 默认第三方库基线（强制纳入架构模板）
 
@@ -219,13 +241,11 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 
 | 能力 | 默认第三方库 | 固定用途 | 归属位置 |
 | --- | --- | --- | --- |
-| Web 框架 | `next`、`react`、`react-dom` | App Router、页面渲染、服务端组件和客户端组件 | `apps/web` |
+| Web 框架 | `next`、`react`、`react-dom` | App Router、页面渲染、服务端组件和客户端组件 | 项目根目录 `package.json` 声明依赖，路由位于 `src/app` |
 | 样式与 CSS 构建 | `tailwindcss`、`postcss`、`@tailwindcss/postcss` | Tailwind 样式、全局主题、设计令牌和响应式布局 | `src/app/globals.css`、`src/styles` |
 | 表单与运行时校验 | `react-hook-form`、`zod` | 表单状态、API 参数、Server Action、环境变量和第三方响应校验 | Feature `schema.ts`、`src/lib/env` |
-| 服务端身份与数据库 | `@supabase/supabase-js`、`@supabase/ssr` | Cookie 会话、认证、PostgreSQL 查询和服务端会话衔接 | `src/lib/auth`、`src/lib/db` |
 | HTTP 客户端 | `axios` | 服务端第三方 API、Webhook 和需要拦截器的 HTTP 调用 | `src/lib/http`、服务端 Adapter |
 | 客户端数据缓存 | `swr` | 客户端列表、详情、用户状态读取和缓存失效 | Feature Hooks |
-| 实时连接 | `ws`、`@types/ws` | 独立 Node.js Gateway 的 WebSocket 长连接 | `apps/realtime-gateway` |
 | 图标与基础 UI | `lucide-react` | 统一图标组件，禁止页面直接混用图标来源 | `src/components/ui` |
 | 日期时间 | `date-fns`、`date-fns-tz` | 日期格式化、时区转换和预约时间处理 | `src/lib/utils`、业务 Service |
 
@@ -242,13 +262,17 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 
 | 功能 | 第三方库 | 启用后固定归属 |
 | --- | --- | --- |
-| 对象存储 | `@aws-sdk/client-s3`、`@aws-sdk/s3-request-presigner` | `src/lib/storage`；密钥只在服务端环境文件 |
-| 支付 | `stripe`、`alipay-sdk` | `features/billing/server`；Webhook 必须验签 |
+| 产品认证 | 采用 Better Auth 时安装 `better-auth` 及已验证的必要适配依赖 | `src/lib/auth` 初始化，认证 Feature 处理业务；不默认叠加 Supabase Auth |
+| 保留 Supabase | `@supabase/supabase-js`、`@supabase/ssr` | 只有所选项目仍使用其能力时安装，分别放 `src/lib/db`、`src/lib/auth`；记录选型原因 |
+| D1 数据访问 | Workers D1 binding；ORM 依赖由项目验证后确定 | `src/lib/db` 封装绑定访问，查询归 Feature Repository；不把本地 SQLite 或 PostgreSQL 测试引擎当成 D1 完整替身 |
+| 独立 Node.js 网关 | `ws`、`@types/ws` | 仅明确选择 Node 运行单元时安装于对应 Gateway；Workers / DO 使用其运行时接口，不安装 `ws` 充当服务端 |
+| 对象存储 | R2 binding；使用 S3 API / 签名时安装 `@aws-sdk/client-s3`、`@aws-sdk/s3-request-presigner` | `src/lib/storage`；按访问方式引入，SDK 命名不代表选用 AWS 存储，长期密钥仅在服务端 |
+| 支付 | 国内支付宝使用 `alipay-sdk`；海外 Stripe 使用 `stripe` | 仅安装已启用渠道的 SDK，验证运行时兼容；`features/billing/server` 封装，Webhook 必须验签 |
 | 文件解析 | `unpdf`、`mammoth` | 对应 Feature 的 `server` 和 Adapter |
 | 浏览器录制 | `recordrtc`、`@types/recordrtc` | 对应媒体 Feature；必须先定义授权、存储和清理策略 |
 | 二维码 | `qrcode`、`@types/qrcode` | 对应邀请或支付 Feature；不放入全局组件 |
 | 音频编码 | `@breezystack/lamejs` | 音频 Feature；通过 Web Worker 执行编码 |
-| 数据库集成测试 | `@electric-sql/pglite` | `tests/integration`；只用于测试，不替代生产数据库 |
+| PostgreSQL 集成测试 | `@electric-sql/pglite` | 仅 PostgreSQL 路线使用，位于 `tests/integration`；D1 路线使用对应本地运行时和隔离平台验证 |
 
 ### 9.4 依赖使用规则
 
@@ -257,5 +281,5 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 | 依赖清单 | 新项目创建时先建立上述默认基础依赖和质量依赖；按功能启用预置库时同步更新 `package.json` 和架构文档 |
 | 原生能力优先 | Next.js 原生 `fetch`、浏览器 Web API 或已有内部组件已经满足需求时，不重复引入第三方库 |
 | 适配层 | 支付、对象存储、翻译、RTC、文件解析等第三方 SDK 必须放在 Adapter 中，业务层只依赖接口 |
-| 环境变量 | 所有第三方服务地址、应用 ID、密钥和模型配置都从 `.env.local` 等环境文件读取，禁止硬编码 |
+| 环境变量 | 标量配置本地使用环境文件，生产使用平台配置与 Secrets；D1、R2 等资源绑定按第 8 节从运行时获取；客户端不得读取服务端密钥 |
 | 测试门禁 | 每个新增业务功能至少覆盖一个主流程测试；第三方 SDK 使用 Mock 或沙箱，不把真实密钥写入测试 |

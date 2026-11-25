@@ -1,8 +1,14 @@
 # iOS SwiftUI + CocoaPods 四层架构项目规范
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Networking 与 L3 Adapter 接入项目 API；CocoaPods 模板以 Crashlytics 为客户端崩溃诊断基线，Performance 按需启用，推送与商店购买通过原生能力封装。
+
 ## 第三方配置管理（强制）
 
-第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+可公开的第三方服务地址、应用 ID、客户端公开标识等项目配置统一定义在 `Infrastructure/Configuration/AppEnvironment.swift` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。 Cloudflare 管理令牌、百炼长期 API Key、支付私钥和数据库管理凭据仅保存在可信服务端；用户会话与受限短期凭证按平台安全存储规范管理，禁止放进 AppEnvironment 或打包到客户端。
 
 本模板面向 SwiftUI + CocoaPods 的中大型 iOS 项目，固定采用传统四层架构。
 
@@ -38,13 +44,14 @@
 | 网络请求 | `Alamofire` | L3 `Infrastructure/Networking`，统一封装请求、重试和错误 |
 | 图片加载 | `Kingfisher` | L3 Adapter，L1 只使用图片资源接口 |
 | 动画 | `lottie-ios` | L3 Adapter，业务层只传动画资源和播放状态 |
-| 崩溃与性能 | `Firebase/Crashlytics`、`Firebase/Performance` | L3 `Infrastructure/Observability`，禁止在业务层直接调用 Firebase |
+| 崩溃诊断 | `Firebase/Crashlytics` | L3 `Infrastructure/Observability`，禁止在业务层直接调用 Firebase |
 | 代码质量 | `SwiftLint` | CI 和 Xcode Build Phase，统一 Swift 代码检查 |
 
 ### 1.2 按功能启用的预置库
 
 | 功能 | CocoaPods 库 | 固定要求 |
 | --- | --- | --- |
+| 客户端性能 | `Firebase/Performance` | 有客户端性能采集需求时启用，由 L3 `Infrastructure/Observability` 统一初始化、脱敏和采样 |
 | WebSocket | `Starscream` | 只有系统 `URLSessionWebSocketTask` 不满足协议要求时启用，统一放 L3 Adapter |
 | 订阅支付 | `RevenueCat` | 仅存在订阅业务时启用，购买和权益校验通过 L3 服务封装 |
 | 富文本/Markdown | `Down` | 仅对应内容功能启用，解析结果不得直接泄漏到 Domain |
@@ -112,7 +119,7 @@ Product/                                      # 项目根目录
 │   ├── FileSystem/                           # 文件系统和临时目录适配
 │   ├── Observability/                        # 日志、监控、崩溃和埋点
 │   ├── CocoaPods/                            # CocoaPods SDK 适配边界
-│   │   ├── FirebaseAdapter.swift             # Firebase SDK 适配
+│   │   ├── FirebaseAdapter.swift             # Firebase 客户端诊断适配；其他模块按选型启用
 │   │   ├── KingfisherAdapter.swift           # Kingfisher SDK 适配
 │   │   └── LottieAdapter.swift               # Lottie SDK 适配
 │   └── InfrastructureEntry.swift             # L3 协议和工厂入口

@@ -1,6 +1,10 @@
 
 
-Next全栈项目的常用第三方库
+# Next 全栈项目的常用第三方库
+
+## 外部平台能力选型（强制）
+
+按[统一选型规则](平台能力选择原则.md#外部平台能力选型强制)、[Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md)与[百炼能力清单](../平台能力/百炼平台能力清单.md)先选平台再选 SDK；本地库与框架基线保持职责不变。云平台绑定、运行时接口不冒充第三方 npm 包，未启用的能力不安装依赖。 配置命名和平台分组沿用 [Next 通用环境变量模板](../Next全局变量/env.example)，读取、校验和 Workers 绑定规则遵守 [Next 架构规范](next-全栈架构.md#8-第三方环境变量管理强制)。
 
 
 # 应用框架与界面
@@ -18,7 +22,7 @@ Next全栈项目的常用第三方库
 | 第三方库 | 简要介绍 |
 | --- | --- |
 | `axios` | 基于 Promise 的 HTTP 客户端，支持浏览器和 Node.js，用于调用 HTTP API，提供请求与响应拦截器、超时配置和请求取消等能力。 |
-| `ws` | Node.js WebSocket 库，用于实时网关与浏览器、AI 供应商之间的双向通信。 |
+| `ws` | 仅明确采用独立 Node.js 网关时安装；Workers / DO 使用自身运行时 WebSocket API，浏览器使用 WebSocket，不无条件创建网关。 |
 
 # 数据缓存工具
 | 第三方库 | 简要介绍 |
@@ -40,7 +44,7 @@ Next全栈项目的常用第三方库
 # 数据库集成测试工具
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `@electric-sql/pglite` | 基于 WebAssembly 的可嵌入 PostgreSQL，支持在隔离环境中执行数据库迁移和 SQL。项目用于验证数据库约束、事务及 RLS 等逻辑，不替代生产数据库。 |
+| `@electric-sql/pglite` | 仅保留 PostgreSQL 选型时用于迁移、约束和事务等测试，不代替生产数据库；D1 路线使用对应本地运行时与隔离平台验证，不用 PGlite 证明 D1 兼容。 |
 
 # 代码格式工具
 | 第三方库 | 简要介绍 |
@@ -54,22 +58,38 @@ Next全栈项目的常用第三方库
 # 身份认证与数据库工具
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `@supabase/supabase-js` | Supabase JavaScript SDK，提供用户认证、数据库查询和数据库函数调用等能力。 |
-| `@supabase/ssr` | 为服务端渲染应用提供 Supabase 会话管理支持，通过 Cookie 衔接浏览器和服务端登录状态。 |
+| `better-auth` | 产品账号优先评估 Workers + D1 + Better Auth，验证后按需安装；服务端封装用户会话，邮件接入 Email Sending，业务权限独立实现。 |
+| D1 binding（平台能力，非 npm 库） | 新项目云数据库优先评估，`lib/db` 适配、Repository 查询；ORM 由项目按需求验证后固定。 |
+| Access（平台能力，非 npm 库） | 受控入口优先评估；验证码、Passkey 和身份源按清单选择，不自动代替产品权益与资源授权。 |
+| `@supabase/supabase-js` | 仅已有工程复用或清单路线无法满足需求、已记录采用依据时安装；不作为所有新项目基础依赖。 |
+| `@supabase/ssr` | 仅使用 Supabase 会话与 SSR 时安装，不与另一套默认认证重复初始化。 |
 
 
 # 对象存储工具
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `@aws-sdk/client-s3` | AWS S3 客户端，项目用它访问兼容 S3 协议的 Cloudflare R2，存储和管理录音文件。 |
+| R2 binding（平台能力，非 npm 库） | Workers 内部文件读写优先使用原生绑定；文件归属和权限由应用校验，不把绑定对象放入环境字符串。 |
+| `@aws-sdk/client-s3` | 需要 S3 API 或签名流程时用于访问 R2；按执行环境确定访问方式，不同时为相同调用维护重复入口。 |
 | `@aws-sdk/s3-request-presigner` | 生成带有效期的上传、下载签名 URL，让浏览器安全访问私有存储文件。 |
 
 
 # 支付工具
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `stripe` | Stripe 服务端 SDK，用于创建支付流程、查询支付数据和验证 Webhook。 |
-| `alipay-sdk` | 支付宝服务端 SDK，用于构造支付请求、签名和验证支付通知。 |
+| `alipay-sdk` | 国内普通 Web 支付优先，按签约产品接入，服务端签名与验签；验证 Workers 兼容性后采用，不默认支持自动扣款。 |
+| `stripe` | 海外支付按商户资格与场景启用，处理收银、订阅及 Webhook；不因存在支付业务就与支付宝同时安装。 |
+
+机器付费 API / MCP、爬虫收费、模型成本支付分别按 Cloudflare 清单选择 x402 / MPP、Pay Per Crawl、AI Gateway Machine Payments；不是普通收银基线。
+
+# 服务端 AI、实时媒体与可观测性
+
+| 平台能力 / 接入工具 | 使用要求 |
+| --- | --- |
+| 百炼 API / 对应 SDK | 按百炼清单确定所需模型与协议；长期密钥保存在服务端，客户端不能直接配置模型管理凭据 |
+| Realtime SFU、TURN、媒体适配器 | 有媒体需求才启用，验证独立音轨、音频格式和译音回传；不等同于 `ws` 库 |
+| Issues、Logs、Traces、Alerts | Workers 服务端优先采用，按需开通、采样与上传 Source Map，不用于替代移动原生监控 |
+| Analytics Engine、Zaraz | 分别承担业务指标和事件分发，不作精确财务账本 |
+| Email Sending、Web Push | 按需接入事务邮件与浏览器通知，验证码校验和用户权限仍由应用负责；Web Push 的库与浏览器支持按接入验证确定 |
 
 
 

@@ -1,8 +1,14 @@
 # Android 中大型项目架构规范
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Retrofit / OkHttp，经 Feature Data 与 Repository 调用项目 API；推送按发行渠道使用 FCM 或厂商适配，原生诊断保留 Sentry Android。
+
 ## 第三方配置管理（强制）
 
-第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `core/common/src/main/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+可公开的第三方服务地址、应用 ID、客户端公开标识等项目配置统一定义在 `core/common/src/main/kotlin/com/company/core/common/config/AppEnvironment.kt` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。 Cloudflare 管理令牌、百炼长期 API Key、支付私钥和数据库管理凭据仅保存在可信服务端；用户会话与受限短期凭证按平台安全存储规范管理，禁止放进 AppEnvironment 或打包到客户端。
 
 本模板面向使用 Kotlin、Jetpack Compose 和 Gradle 多模块的中大型 Android 项目。固定采用 Android 官方架构原则中的 UI 层 + Data 层 + 可复用 Domain 层，并按业务 Feature 拆分模块。
 

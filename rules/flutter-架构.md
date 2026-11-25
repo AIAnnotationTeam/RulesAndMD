@@ -1,8 +1,14 @@
 # Flutter 中大型项目架构模板
 
+## 外部平台能力选型（强制）
+
+外部平台能力遵守 [统一选型规则](平台能力选择原则.md#外部平台能力选型强制)，优先从 [Cloudflare 能力清单](../平台能力/Cloudflare能力清单.md) 和 [百炼平台能力清单](../平台能力/百炼平台能力清单.md) 选择。本文的固定技术栈约束客户端工程，不代表固定绑定云服务商；平台优先级、适用性验证和例外条件统一以该规则为准；用户明确指定、项目约束或清单能力不足等情况，须在方案中记录采用依据。方案须确定实际采用的服务与 SDK，并与对应架构、库清单同步。
+
+客户端通用接入边界见 [统一接入规则](平台能力选择原则.md#客户端接入边界)。沿用 Dio，经 Feature Data 的 Repository / Service 接入项目 API；插件按目标平台验证，原生推送与浏览器 Web Push 分开适配，本地通知保留系统插件。
+
 ## 第三方配置管理（强制）
 
-第三方服务地址、应用 ID、API Key 等项目配置统一定义在 `lib/app/config/app_environment.dart` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。
+可公开的第三方服务地址、应用 ID、客户端公开标识等项目配置统一定义在 `lib/app/config/app_environment.dart` 的 `AppEnvironment` 中，其他代码统一引用，禁止分散定义；本工程不强制使用环境文件。 Cloudflare 管理令牌、百炼长期 API Key、支付私钥和数据库管理凭据仅保存在可信服务端；用户会话与受限短期凭证按平台安全存储规范管理，禁止放进 AppEnvironment 或打包到客户端。
 
 本文是 Flutter 中大型项目的固定工程模板。所有业务代码按 Feature-first 组织，Feature 内部采用 Flutter 官方架构中的 UI 层、Domain 层和 Data 层；UI 层使用 MVVM，数据访问使用 Repository + Service。目录职责和依赖方向均已固定，新增代码必须按本文归位。
 
