@@ -98,7 +98,7 @@
 
 | 第三方库 | 简要介绍 |
 | --- | --- |
-| `RevenueCat` | 商店购买、恢复和订阅管理需要时保留；普通 Web 收款按清单国内支付宝、海外 Stripe 选型，不将二者等同于商店内购。 |
+| `RevenueCat` | 商店购买、恢复和订阅管理需要时保留；普通 Web 收款按清单国内支付宝、海外 Creem 选型，不将二者等同于商店内购。 |
 | `FBSDKCoreKit` | 只为实际需要的 Meta 专属能力引入；仅业务事件采集与转发时优先评估 Analytics Engine / Zaraz HTTP Events API，完整归因不能直接替换。 |
 
 

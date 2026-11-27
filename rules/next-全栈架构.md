@@ -12,7 +12,7 @@
 | 实时 | 房间状态优先 DO，音视频优先 Realtime SFU / TURN / 媒体适配器 | 模型长连接网关单独验证，运行时确定后才选传输库；独立 Node Gateway 不是所有项目的默认单元 |
 | AI | 百炼清单按能力确定模型，Cloudflare Workers AI 按适用性评估 | 对话、同传、ASR、TTS、图像及视频模型分别配置；业务不直接依赖供应商事件格式 |
 | 监控与通知 | Issues、Logs、Traces、Alerts；事务邮件使用 Email Sending，Web 通知评估 Web Push | 校验套餐、域名、投递与平台边界，按需使用 Analytics Engine / Zaraz |
-| 支付 | 国内普通 Web 支付优先支付宝，海外评估 Stripe | 按清单支付场景表固定选型；x402 / MPP、爬虫收费、模型成本支付独立判断，不作为普通收银默认依赖 |
+| 支付 | 国内普通 Web 支付优先支付宝，海外评估 Creem | 按清单支付场景表固定选型；x402 / MPP、爬虫收费、模型成本支付独立判断，不作为普通收银默认依赖 |
 
 已确认项目方案优先于通用模板；上述优先路线需完成适用性验证后形成唯一实施方案。现有工程不因模板更新自动迁移数据库、认证或网关。
 
@@ -63,7 +63,7 @@ project/
 │   │   │           └── page.tsx         # /admin/users
 │   │   ├── api/                         # 对外 HTTP API 与第三方回调
 │   │   │   ├── v1/projects/route.ts     # /api/v1/projects
-│   │   │   └── webhooks/                  # 仅创建已启用渠道的 alipay、stripe 等回调
+│   │   │   └── webhooks/                  # 仅创建已启用渠道的 alipay、creem 等回调
 │   │   ├── layout.tsx                   # 根布局
 │   │   ├── error.tsx
 │   │   ├── global-error.tsx
@@ -267,7 +267,7 @@ Client Component → Server Action 或 Route Handler → Service → Repository 
 | D1 数据访问 | Workers D1 binding；ORM 依赖由项目验证后确定 | `src/lib/db` 封装绑定访问，查询归 Feature Repository；不把本地 SQLite 或 PostgreSQL 测试引擎当成 D1 完整替身 |
 | 独立 Node.js 网关 | `ws`、`@types/ws` | 仅明确选择 Node 运行单元时安装于对应 Gateway；Workers / DO 使用其运行时接口，不安装 `ws` 充当服务端 |
 | 对象存储 | R2 binding；使用 S3 API / 签名时安装 `@aws-sdk/client-s3`、`@aws-sdk/s3-request-presigner` | `src/lib/storage`；按访问方式引入，SDK 命名不代表选用 AWS 存储，长期密钥仅在服务端 |
-| 支付 | 国内支付宝使用 `alipay-sdk`；海外 Stripe 使用 `stripe` | 仅安装已启用渠道的 SDK，验证运行时兼容；`features/billing/server` 封装，Webhook 必须验签 |
+| 支付 | 国内支付宝使用 `alipay-sdk`；海外 Creem 使用 `creem`，Next.js 官方适配按需使用 `@creem_io/nextjs` | 仅安装已启用渠道的 SDK，验证运行时兼容；`features/billing/server` 封装，Webhook 必须验签 |
 | 文件解析 | `unpdf`、`mammoth` | 对应 Feature 的 `server` 和 Adapter |
 | 浏览器录制 | `recordrtc`、`@types/recordrtc` | 对应媒体 Feature；必须先定义授权、存储和清理策略 |
 | 二维码 | `qrcode`、`@types/qrcode` | 对应邀请或支付 Feature；不放入全局组件 |

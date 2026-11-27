@@ -77,7 +77,8 @@
 | 第三方库 | 简要介绍 |
 | --- | --- |
 | `alipay-sdk` | 国内普通 Web 支付优先，按签约产品接入，服务端签名与验签；验证 Workers 兼容性后采用，不默认支持自动扣款。 |
-| `stripe` | 海外支付按商户资格与场景启用，处理收银、订阅及 Webhook；不因存在支付业务就与支付宝同时安装。 |
+| `creem` | 海外普通 Web 收款采用 Creem，通过 TypeScript SDK 创建收银会话并处理订阅；完成商户审核，按原始请求体验签并幂等更新权益。 |
+| `@creem_io/nextjs` | 采用官方 Next.js 路由与组件适配时按需安装；与 SDK 统一封装在一个支付 Adapter 内，验证部署运行时兼容性，不因存在支付业务就安装所有适配器。 |
 
 机器付费 API / MCP、爬虫收费、模型成本支付分别按 Cloudflare 清单选择 x402 / MPP、Pay Per Crawl、AI Gateway Machine Payments；不是普通收银基线。
 
